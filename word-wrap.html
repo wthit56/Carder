@@ -1,0 +1,111 @@
+<!doctype html><body>
+
+<script type="text/javascript" src="word-wrap.js"></script>
+<script type="text/javascript">
+
+var canvas = document.body.appendChild(document.createElement("CANVAS")),
+	context = canvas.getContext("2d");
+
+canvas.height = 500;
+context.font = "1em Arial";
+
+var input = "aaaa bbb ccc d eeee aaaa bbb ccc d fffffffffff aaaa bbb ccc d";
+input = input.replace(/ {2,}/g, " ").replace(/^ +| +$/g, "");
+
+var y = 20, line_height = 22;
+
+/*
+var lines = [], nl = "";
+while (nl = ww_next(context, 100, input)) {
+	input = input.substr(nl.length + 1);
+	lines.push(nl); nl = "";
+}
+console.log(lines);
+
+lines.forEach(function render(line) {
+	context.fillText(line, 0, y);
+	y += line_height;
+});
+//*/
+
+/*
+// ctx, telem, line_height, text, result
+ww_render(context, { indent: 50, from: { x: 0, y: y + line_height + 5 }, to: { x: 300 } }, line_height,
+	"Card text tends to be much <strong>longer</strong> with multiple lines and icons {attack} and everything");
+//*/
+
+
+
+var icons = {
+	defense: "⛊",//"⛨"//"🛡"
+	attack: "⚔"
+};
+
+//*
+var bold = "bold 1em Arial";
+var icon = "1.5em Arial";
+
+function stat(ctx, telem, part) {
+	var width = stat.width(part), icon_offset = 2, number_offset = -1;
+	ctx.save();
+	
+	// ctx.textBaseline = "middle";
+	ctx.translate(telem.from.x + telem.indent + (width / 2), telem.from.y + icon_offset);
+	// ctx.lineWidth = 0.5; ctx.strokeRect(-width/2, -width + 3, width, width);
+	
+	var s = 1.1;
+	ctx.scale(s, s);
+	
+	ctx.font = "20px Arial bold";
+	// ctx.fillText(icons[part.icon], 0, ctx.measureText(icons[part.icon]).width / 2);
+	var icon = icons[part.icon];
+	ctx.fillText(icon, -ctx.measureText(icon).width / 2, 0);
+	
+	var tw = ctx.measureText(part.value).width;
+	/*
+	if (tw > width) {
+		ctx.save();
+		ctx.scale(100 / tw);
+		// ctx.fillText(
+		ctx.restore();
+	}
+	*/
+	
+	ctx.strokeStyle = "white"; ctx.lineWidth = 2.5;
+	ctx.strokeText(part.value, -tw / 2, number_offset);
+	ctx.fillText(part.value, -tw / 2, number_offset);
+	
+	console.log(part);
+	ctx.restore();
+	
+	return width;
+}
+stat.width = function(part) { return 20; };
+
+/*
+defense: "⛊",//"⛨"//"🛡"
+attack: "⚔
+*/
+
+// ctx, telem, line_height, parts, result
+ww_rich(context, { from: { x: 120, y: 20 }, to: { x: 300 }, line_height: line_height, break_margin: 5 }, [
+	{ text: "Card text tends to be much" },
+	{ text: "longer", style: bold },
+	{ text: "with multiple lines and icons" },
+	{ text: "⚔", style: icon },
+	{ text: "and everything........." },
+	{ text: "⛊", style: icon },
+	{ break: true },
+	{ text: "after +2", nospace: true },
+	{ text: "⛊", style: icon },
+	{ text: "last" }
+]);
+//*/
+
+</script>
+
+
+
+
+
+

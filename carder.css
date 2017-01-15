@@ -1,0 +1,52 @@
+body {}
+.card {
+	width:2.5in; height:3.5in; float:left;
+	margin:0.2em; border:1px solid black;
+	position:relative;
+}
+
+.text {margin:1em;}
+	h1, h2 {margin:0;}
+	h2 {font-weight:normal; font-size:100%; font-style:italic;}
+	p {margin-top:1em;}
+
+	.text .icon {font-size:150%; line-height:0;}
+
+.stat, .icons {font-size:3em;}
+
+.stats {float:right; margin-left:1em;}
+.stat {
+	
+	position:relative;
+	display:block;
+	overflow:hidden;
+	text-align:center; line-height:1em;
+}
+	.stat-value {
+		font-weight:bold;
+		text-shadow:
+	     -1px -1px 0 #FFF,  
+	      1px -1px 0 #FFF,
+	      -1px 1px 0 #FFF,
+	       1px 1px 0 #FFF;
+		position:absolute;
+		/*background:rgba(255,0,0,0.5);*/
+		width:100%;
+		left:0; top:0;
+	}
+		.stat-value.s1 {font-size:70%; line-height:155%;}
+		.stat-value.s10 {font-size:65%; line-height:160%;}
+		.stat-value.s100 {font-size:50%; line-height:210%;}
+		.stat-value.s1000 {font-size:35%; line-height:300%;}
+
+.icons {
+	position:absolute; bottom:0;
+	padding-left:0.1em;
+}
+	.icons .icon {display:inline-block; width:1em; text-align:center; line-height:1em;}
+	.icons .icon.on {}
+	.icons .icon.off {opacity:0.5;}
+
+
+
+

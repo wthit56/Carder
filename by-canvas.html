@@ -1,0 +1,100 @@
+<!doctype html><body>
+<style>
+.card {width:2.5in; height:3.5in;}
+</style>
+<script src="word-wrap.js"></script>
+<script src="by-canvas.js"></script>
+<script>
+// https://unicode-table.com/
+var glyphs = {
+	cost: "\u2B24", // ⬤
+	attack: "\u2694", // ⚔
+	defense: "\u26CA", // ⛊
+	truce: "\u2690", // ⚐
+	yes: "\u2713" // ✓
+};
+var template = {
+	title: "", // text
+	text: "", // rich text
+	// stats
+	cost: 1, attack: 1, defense: 1,
+	// icons
+	truce: true, yes: true
+};
+var cards = [
+	{
+		title: "Card Title gl",
+		text: "Card text tends to be.. much *longer* with multiple lines and icons {attack} and everything\n+2{yes}\nskfhjsdkfhksdhfkjdshfkdsjhfjksdhfkjdsfkskfdkfh\nslkjfskfhjdskgjhhlfkjgdlgjldfkgjfdlkjgldjlkfjgkjsdhfdskhgfdkghfdkgfdhg4875439857 sdkjfh",
+		attack: 3, defense: 5, cost: 5,
+		truce: true, blah: false, yes: true
+	}
+];
+template.text = template.text;
+
+
+var styles = {
+	icon: "1.4em Arial",
+	bold: "bold 1em Arial"
+};
+function rich(text) {
+	var result = [];
+	text.replace(/([^{\n*]+)|\{([^}]+)}|\*([^*]+)\*|(\n)/g, function(m, text, icon, bold, newline) {
+		if (text) { result.push({ text: text }); }
+		else if (icon) { result.push({ text: glyphs[icon], style: styles.icon }); }
+		else if (bold) {
+			result.push({ text: bold, style: styles.bold });
+		}
+		else if (newline) { result.push({ break: true }); }
+		else { debugger; }
+		
+		var last = result[result.length - 1];
+		if (!last.break && !last.text) { debugger; }
+	});
+	return result;
+}
+
+var random = {
+	text: function(length) {
+		length = length || 100;
+		var str = "r:";
+		do {
+			if (Math.random() < 0.2) { str += " "; }
+			else {
+				str += String.fromCharCode(32 + (Math.random() * 94 | 0));
+			}
+		} while (str.length < length && Math.random() < 1 - (1 / length));
+		return str.replace(/[*{}\n]/g, "");
+	}
+};
+/*
+{
+	title: "Card Title gl",
+	text: "Card text tends to be.. much *longer* with multiple lines and icons {attack} and everything\n+2{yes}",
+	attack: 3, defense: 5, cost: 5,
+	truce: true, blah: false, yes: true
+}
+*/
+
+//*
+while (cards.length < 52) {
+	cards.push({
+		title: random.text(30),
+		text: random.text(200),
+		attack: Math.random() * 10 | 0,
+		defense: Math.random() * 100 | 0,
+		cost: Math.random() * 1000 | 0,
+		truce: Math.random() > 0.5,
+		yes: Math.random() > 0.5
+	});
+}
+//*/
+
+cards.forEach(function(card) {
+	card.text = rich(card.text);
+});
+// cards.push({text:"blah"})
+
+// console.log(cards.length);
+
+render(glyphs, template, cards, { x: 300, y: 420 });
+</script>
