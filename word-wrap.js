@@ -82,9 +82,16 @@ function ww_rich(ctx, telem, parts, result) {
 				}
 				part.style(ctx, t, part);
 			}
-			else {
+			else if (typeof part.style === "string") {
 				ctx.save();
 				ctx.font = part.style;
+				ww_render(ctx, t, part.text, r);
+				ctx.restore();
+			}
+			else {
+				ctx.save();
+				if (part.style.font) { ctx.font = part.style.font; }
+				if (part.style.line_height) { ctx.translate(0, -(part.style.line_height - telem.line_height) / 2); }
 				ww_render(ctx, t, part.text, r);
 				ctx.restore();
 			}			

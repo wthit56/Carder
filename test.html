@@ -1,0 +1,79 @@
+<!doctype html><body><script src="./index.js"></script>
+<script>
+
+var icons = {
+	__style: { font: "1.8em Arial", line_height: 30 },
+	__fromName: function(name) {
+		return icons[name];
+	},
+	
+	food: { text: "\uD83C\uDF5E", style: { font: "1.6em Arial", line_height: 28 } }, // 🍞
+	stone: { text: "\u25AD", style: { font: "bold 1.9em Arial", line_height: 41 } }, // ▭︎
+	wood: { text: "\u275A", style: { line_height: 32 } }, // ❚
+	water: { text: "\uD83D\uDCA7", style: { font: "1.5em Arial", line_height: 26 } }, // 💧
+	building: { text: "\uD83C\uDFD8", style: { line_height: 40 } }, // 🏘
+	item: { text: "\u2692", style: { line_height: 32 } }, // ⚒
+	attack: "\u2694", combat: "\u2694", // ⚔
+	into: "\u27AA", // ➪
+	outpost: "\uD83C\uDFE0", // 🏠
+	hp: { text: "\u2665", style: { font: "2em Arial", line_height: 37 } }, // ♥
+	monster: { text: "\uD83D\uDD25", style: { font: "1.5em Arial", line_height: 25 } } // 🔥
+};
+Object.keys(icons).forEach(function(name) {
+	if (name.indexOf("__") !== 0) {
+		var icon = icons[name];
+		if (typeof icon === "string") {
+			icon = new String(icon);
+			icon.text = icon;
+			icon.style = icons.__style;
+		}
+		else {
+			var nicon = new String(icon.text);
+			nicon.text = icon.text;
+			nicon.style = icon.style;
+			icon = nicon;
+		}
+		
+		if (!icon.style.font) { icon.style.font = icons.__style.font; }
+		if (!icon.style.line_height) { icon.style.line_height = icons.__style.line_height; }
+		icon.text += "\uFE0E";
+		icons[name] = icon;
+	}
+});
+
+carder([
+	{ url: "file:///F:/Google Drive/My Games/Forager/Building - Starter - Stone.png" },
+	{ url: "file:///F:/Google Drive/My Games/Forager/Building - Starter - Wood.png" },
+	{ title: "Title f kfdghk gkfdhg kdfgh k" },
+	{ text: "Title f kfdghk gkfdhgkdfgh k\n{stone} afdsf" },
+	{ title: "Title ............", text: "lg{food}lg{stone}lg",
+		wood: "1", water: 2, food: 4, stone: "", monster: true, building: true },
+	// wood water town attack combat into reward field outpost hp monster
+	{ title: "Title f kfdghk gkfdhg kdfgh k", text:" lskdfhskfksd hfsdhfkds fsdf" }
+], { // styling
+	size: { x: 250, y: 350 }, scale: 3,
+	stats: { scale: 1.8, width: 50, height: 50, text_style: "1.2em Arial", pre: icons.__fromName },
+	icons: { scale: 1, width: 29, height: 28, pre: icons.__fromName },
+	title: { style: "bold 2.0em Times New Roman", line_height: 35 },
+	text: { style: "1.4em Arial", line_height: 28, break_margin: 10, pre: function(src, card) {
+		var result = [];
+		
+		src.replace(/([\W\w]+?)?(?:\*([^*]*)\*|\{([^}]+)}|(\n)|$)/g, function(m, text, bold, icon, newline) {
+			var add;
+			if (text) { result.push({ text: text }); }
+			
+			if (bold) { add = { text: bold, style: "bold 1.4em Arial" }; }
+			else if (icon) { add = icons[icon]; }
+			else if (newline) { add = { break: true }; }
+			
+			if (add) { result.push(add); }
+		});
+		
+		return result;
+	} },
+	gutter: 10
+}, { // back
+	url: "file:///F:/Google Drive/My Games/Forager/Card Back.png"
+});
+
+</script>
