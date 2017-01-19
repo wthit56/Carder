@@ -5,12 +5,18 @@ carder = (function() {
 
 
 var card_size;
-function carder(cards, styling, back) {
+function carder(cards, styling, back, full) {
 	if (cards.length > 69) { alert("Too many cards; each deck can only have 69 cards + 1 back."); return; }
 	
-	var square = Math.sqrt((styling.size.x * styling.scale) * (styling.size.y * styling.scale) * (cards.length + 1));
-	var width = Math.ceil(square / (styling.size.x * styling.scale));
-	var height = Math.ceil((cards.length - 1) / width);
+	var width, height;
+	if (!full) {
+		var square = Math.sqrt((styling.size.x * styling.scale) * (styling.size.y * styling.scale) * (cards.length + 1));
+		width = Math.min(Math.ceil(square / (styling.size.x * styling.scale)), 10);
+		height = Math.ceil((cards.length - 1) / width);
+	}
+	else {
+		width = 10; height = 7;
+	}
 	
 	var scale = styling.scale, max_size = 4096;
 	if (styling.size.y * scale * height > max_size) {
@@ -87,7 +93,7 @@ function carder(cards, styling, back) {
 		final.parentNode.insertBefore(img, final);
 		final.parentNode.removeChild(final);
 		
-		document.body.appendChild(document.createElement("SPAN")).innerText = "[" + width + "x" + height + "," + cards.length + "]";
+		document.body.appendChild(document.createElement("SPAN")).innerText = "[" + width + "x" + height + "," + cards.length + "] ("+card_size.x+", "+card_size.y+")";
 	}
 }
 
