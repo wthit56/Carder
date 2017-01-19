@@ -1,11 +1,12 @@
 function ww_next(ctx, width, string, result) {
-	var line = string, lnw = 0;
-	while (1) {
+	var line = string, lnw = 0, last = true;
+	while (true) {
 		lnw = ctx.measureText(line).width;
 		if (lnw < width) {
 			break;
 		}
 		else {
+			last = false;
 			lsp = line.lastIndexOf(" ");
 			if (lsp === -1) { break; }
 			line = line.substr(0, lsp);
@@ -16,6 +17,7 @@ function ww_next(ctx, width, string, result) {
 		result.text = line;
 		if (typeof line ==="number"){debugger;}
 		result.width = lnw;
+		result.last = last;
 		return result;
 	}
 	else { return line; }
@@ -24,26 +26,25 @@ function ww_next(ctx, width, string, result) {
 function ww_render(ctx, telem, text, result) {
 	var y = telem.from.y, x = telem.from.x;
 	var width = telem.to.x - telem.from.x;
-	var r = {};
-	
-	
 	
 	var indent = telem.indent || 0;
-	var new_line = ww_next(ctx, width - indent, text, r);
+	var new_line = ww_next(ctx, width - indent, text, {});
 	
 	if (new_line.width > width - indent) {
 		if (indent > 0) {
 			indent = 0; y += telem.line_height;
-			new_line = ww_next(ctx, width, text, r);
+			new_line = ww_next(ctx, width, text, new_line);
 		}
 	}
 	
-	
-	while (r.text) {
-		ctx.fillText(new_line.text, x + indent, y, width);
+	while (true) {
+	ctx.fillText(new_line.text, x + indent, y, width);
 		hanger = new_line.width;
 		text = text.substr(new_line.text.length + 1);
-		new_line = ww_next(ctx, width, text, r);
+		
+		if (new_line.last) { break; }
+		
+		new_line = ww_next(ctx, width, text, new_line);
 		if (new_line.text) { y += telem.line_height; }
 		if (text) { indent = 0; }
 	}
