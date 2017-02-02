@@ -1,0 +1,113 @@
+<!doctype html><body>
+	<label for="input">INPUT:</label><textarea id="input" cols=30 rows=15></textarea>
+	<h1>Output...</h1>
+	<div id="output" style="display:none;">
+	</div>
+	
+	<label for="old_path">Old Path:</label><input id="old_path" />
+	<label for="new_path">New Path:</label><input id="new_path" /><br />
+	<input type="button" value="Re-Path" id="repath" />
+	<input type="button" value="Split" id="split" />
+	
+	<script>
+
+
+function parseInput() {
+	var INPUT;
+	input.value.replace(/^# Save File\ncardsx=(\d+)\ncardsy=(\d+)\ncard-width=(\d+)\ncard-height=(\d+)\nzoom=(\d+(?:\.\d+)?)\nbackground-color=(-?\d+)/, function(m, layout_x, layout_y, card_x, card_y, zoom, bg) {
+		INPUT = {
+			layout: { x: +layout_x, y: +layout_y },
+			card_size: { x: +card_x, y: +card_y },
+			zoom: +zoom, bg: +bg,
+			cards: []
+		};
+	});
+	if (!INPUT) { alert("Incorrect input."); return; }
+	input.value.replace(/^(?:(\d+)_(\d+)=([^\r\n]+))$/gm, function(m, x, y, card) {
+		card = (card === "null" ? null : card);
+		
+		if (card) { INPUT.cards.card_count = INPUT.cards.card_count ? 1 : INPUT.cards.card_count + 1; }
+		
+		INPUT.cards.push({
+			x: +x, y: +y, card: card
+		});
+	});
+	return INPUT;
+}
+function render(IN) {
+	return (
+		"# Save File\n" +
+		"cardsx=" + IN.layout.x + "\n" +
+		"cardsy=" + IN.layout.y + "\n" +
+		"card-width=" + IN.card_size.x + "\n" +
+		"card-height=" + IN.card_size.y + "\n" +
+		"zoom=" + IN.zoom + "\n" +
+		"background-color=" + IN.bg + "\n" +
+		IN.cards.map(function(c) {
+			return c.x + "_" + c.y + "=" + (c.card || "null")
+		}).join("\n")
+	);
+}
+
+repath.onclick = function(e) {
+	e.preventDefault();
+	
+	var IN = parseInput();
+	if (!IN) { return; }
+	
+	IN.cards.forEach(function(c) {
+		if (c.card) {
+			c.card = new_path.value + c.card.substr(old_path.value.length);
+		}
+	});
+	
+	output.value = render(IN);
+	
+	single.style.display="inherit";
+	double.style.display="none";
+};
+
+split.onclick = function(e) {
+	e.preventDefault();
+	
+	var outs = [], current;
+	var IN = parseInput();
+	
+	var max_size = 4096;
+	var layout = { x: Math.floor(max_size / IN.card_size.x), y: Math.floor(max_size / IN.card_size.y) };
+	var max_count = (layout.x * layout.y) - 1;
+	
+	IN.cards.forEach(function(c) {
+		if (!current || (current.cards.length >= max_count)) {
+			outs.push(current = { cards: [], card_size: IN.card_size, zoom: IN.zoom, bg: IN.bg, layout: layout });
+		}
+		
+		var i = current.cards.push(c) - 1;
+		c.x = i % layout.x;
+		c.y = (i - c.x) / layout.x;
+		console.log(i, current.cards.length);
+	});
+	
+	var hidden = IN.cards[IN.cards.length - 1];
+	hidden.x = layout.x - 1; hidden.y = layout.y - 1;
+	var html = "";
+	outs.forEach(function(o) {
+		while(o.cards.length < max_count) {
+			var c = {};
+			var ni = o.cards.push(c);
+			c.x = ni % layout.x;
+			c.y = (ni - c.x) / layout.x;
+		}
+		o.cards[max_count] = hidden;
+		
+		html += "<textarea>" + render(o) + "</textarea>";
+	});
+	
+	console.log(outs);
+	// console.log(html);
+	
+	output.style.display="inherit";
+	output.innerHTML = html;
+};
+
+</script>

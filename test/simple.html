@@ -1,0 +1,35 @@
+<!doctype html>
+<meta charset="utf-16" /><body><style>
+body { background:black; } canvas, img { border:0.2em solid black; }
+</style><script src="../word-wrap.js"></script><script src="../carder.js"></script><script>
+
+var basic = carder.deck([
+	{ title: "Title sdkfh skfhdskjf sdkjfh" },
+	{ text: "Text sjdkfh ksdfoi9we ofewifhihfdsd fsk" },
+	{ title: "Title kjdhfkjsdhfkhkjdh ffdjksh sd", text: "Text jhdf ksdjfh dsfkjdfh" },
+	{ url: "https://www.google.co.uk/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png" },
+	{ url: "file:///F:/JavaScript/Carder/test/card2.png" },
+	{ stat1: "?", icon1: true, title: "Title", text: "Text" },
+	{ stat1: "", stat2: 99, icon1: true, icon2: true, bread: "1", title: "Title", text: [
+			"Text ", { text: carder.as_text("🍞"), size: 24, font: { font: "Arial", px: 16, baseline: 3, x_height: 8 } }
+		]
+	},
+	{ stat2: 1, stat1: "?", icon1: true, icon2: true },
+	{ stat2: 999, bread: true, debug: true },
+	{ text: "icon:{stat2}?" },
+	{ text: "Ag{bread}Ag{stat2}Ag{icon2}Ag *bold*\nbreak", bread: true, stat2: true, icon2: true }
+], {
+	glyphs: {
+		// default_style: { font: "1.8em Arial", offset: -3 },
+		bread: { text: carder.as_text("🍞"), size: 24, font:
+			{ font: "Arial", px: 16, baseline: 3.6, x_height: 8 }
+		},
+		stat2: { text: "❚", font: {"font":"Arial","px":52,"baseline":11.4,"x_height":29.8} },
+		icon2: "Y"
+	}
+}, { path: "card.png" });
+
+carder([basic]);
+
+
+</script>

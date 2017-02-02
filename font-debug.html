@@ -1,0 +1,104 @@
+<!doctype html><body>
+<style>
+	body { background:black; color:white; font-size:1.4em; }
+	canvas {box-shadow: 0 0 3px white;}
+</style>
+<script src="word-wrap.js"></script>
+<script src="carder.js"></script>
+<canvas id="canvas"></canvas><br />
+
+<div id="triggered">
+	<label for="_text">Text:</label> <input id="_text" value="Txp🍞" />
+	<label for="_as_text">(as text)</label> <input id="_as_text" type="checkbox" checked />
+	<label for="_scale">Scale:</label> <input id="_scale" value="3" type="number" /><br />
+
+	<label for="_font">Font:</label> <input id="_font" value="Arial" />
+	<label for="_px">PX (choose biggest size for best results):</label> <input id="_px" type="number" value="20" />
+	<label for="_style">Style:</label> <input id="_style" value="" /><br />
+
+	<label for="_baseline">Baseline (bottom of the 'x'):</label> <input id="_baseline" type="number" step="0.1" value="7" />
+	<label for="_x_height">X-height (top of the 'x'):</label> <input id="_x_height" type="number" step="0.1" value="10.5" />
+	<label for="_cap_height">Cap-height (top of the 'T'):</label> <input id="_cap_height" type="number" step="0.1" value="14.4" />
+	<label for="_tail_height">Tail-height (bottom of the 'p'):</label> <input id="_tail_height" type="number" step="0.1" value="4" /><br />
+</div>
+
+<label for="_pasted">Paste:</label> <input id="_pasted" />
+<label for="_to_copy">Copy:</label> <input id="_to_copy" />
+
+<script>
+
+var ctx = canvas.getContext("2d");
+ctx.fillStyle="white";ctx.fillRect(0,0,canvas.width, canvas.height);ctx.fillStyle="black";
+
+canvas.width = 900;
+canvas.height = 400;
+
+var font = {
+	font: "Arial", px: 20,
+	baseline: 7.0, x_height: 10.5, cap_height: 14.4, tail_height: 4.0
+};
+
+function render() {
+	var font = {
+		font: _font.value, px: +_px.value, style: _style.value,
+		baseline: +_baseline.value, x_height: +_x_height.value,
+		cap_height: +_cap_height.value, tail_height: +_tail_height.value
+	};
+	
+	
+	canvas.width = canvas.width;
+	ctx.save(); {
+		ctx.scale(_scale.value,_scale.value);
+		
+		
+		var glyph = _as_text.checked ? carder.as_text(_text.value) : _text.value;
+		ww_debug(ctx, glyph, 16, font, 3);
+		ctx.translate(50, 0);
+		ww_debug(ctx, glyph, 24, font, 3);
+		ctx.translate(-50, 30);
+		ww_debug(ctx, glyph, 52, font, 3);
+	} ctx.restore();
+	
+	if (font.cap_height === 0) { delete font.cap_height; }
+	if (font.tail_height === 0) { delete font.tail_height; }
+	if (font.style === "") { delete font.style; }
+	_to_copy.value = JSON.stringify(font);
+}
+render();
+
+Array.from(document.querySelectorAll("#triggered input")).forEach(function(i) {
+	console.log(i);
+	i.onchange = i.onkeyup = onchange;
+});
+_pasted.onchange = _pasted.onpaste = function(e) {
+	requestAnimationFrame(function() {
+		var font = new Function("return (" + _pasted.value + ")")();
+		
+		_font.value = font.font || "";
+		_px.value = font.px || "";
+		_style.value = font.style || "";
+		_baseline.value = font.baseline || 0;
+		_x_height.value = font.x_height || 0;
+		_cap_height.value = font.cap_height || 0;
+		_tail_height.value = font.tail_height || 0;
+		
+		_pasted.value = "";
+		
+		console.log(font);
+		render();
+	});
+};
+_to_copy.onclick = function() {
+	_to_copy.select();
+};
+function onchange() {
+	font.font = _font.value;
+	render();
+}
+</script>
+
+
+
+
+
+

@@ -1,0 +1,111 @@
+<!doctype html><body>
+<link href="styles.css" rel="stylesheet" />
+<style>
+
+body { background-color:#aaa; }
+
+.part { display:inline-block; text-align:center; margin:0.5em; background-color:#fff; }
+	.part canvas, .part span { display:block; margin:0.5em; }
+
+</style>
+<script src="../font.js"></script>
+<script>
+
+function part() {
+	var part = document.body.appendChild(document.createElement("DIV"));
+	part.className = "part";
+	
+	var canvas = part.appendChild(document.createElement("CANVAS"));
+	var ctx = canvas.getContext("2d");
+	
+	return { canvas: canvas, ctx: ctx, container: part };
+}
+
+function test_lines(config) {
+	
+}
+
+function test(config) {
+	var p = part();
+	var canvas = p.canvas;
+	canvas.width = 850; canvas.height = 100;
+	var ctx = p.ctx;
+	
+	var f = font(config), set;
+	
+	var gap = 10;
+	var x = gap, y = gap;
+	canvas.height = (f.bottom * 2) + (gap * 3);
+	
+	set = f.set(ctx);
+	ctx.textBaseline = "top";
+	ctx.globalCompositeOperation = "destination-over";
+	
+	"top,hanging,middle,alphabetic,ideographic,bottom,small,large".split(",").forEach(function(baseline) {
+		ctx.save(); {
+			var twidth, scale = 1, fillText = true, align = true, bl = baseline;
+			switch (baseline) {
+				case "small": case "large": {
+					scale = (baseline === "small" ? 0.5 : 1.5);
+					twidth = f.measureText(ctx, baseline, scale).width;
+					bl = "alphabetic";
+					fillText = false;
+					align = false;
+				} break;
+				
+				default: {
+					twidth = f.measureText(ctx, baseline).width;
+				}
+			}
+			console.log(baseline, ctx.textBaseline);
+			
+			if (x + twidth > canvas.width - gap) {
+				x = gap; y += f.bottom + gap;
+			}
+			
+			if (fillText) {
+				ctx.textBaseline = "top"; ctx.fillStyle = "black"; ctx.fillText(baseline, x, y);
+			}
+			
+			ctx.textBaseline = bl;
+			if (align) { ctx.fillStyle = "#d00"; }
+			f.render(ctx, baseline, x, y - 0, null, scale);
+			
+			x += twidth + gap;
+		} ctx.restore();
+	});
+	
+	p.container.appendChild(document.createElement("SPAN")).innerText = ctx.font;
+}
+
+test({ family: "Arial", size: 48,
+	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
+test({ family: "Times New Roman", size: 48,
+	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
+test({ family: "Comic Sans MS", size: 48,
+	top: 0, hanging: 11, middle: 34, alphabetic: 53, ideographic: 67, bottom: 67 });
+
+test({ family: "Arial", size: 40,
+	alphabetic: 36, bottom: 44 });
+test({ family: "Arial", size: "3em",
+	alphabetic: 43, bottom: 53 });
+test({ family: "Arial", size: "3em", bold: true,
+ 	alphabetic: 43, bottom: 53 });
+test({ family: "Arial", size: "3em", italic: true,
+	alphabetic: 43, bottom: 53 });
+test({ family: "Arial", size: "3em", bold: false, italic: true,
+ 	alphabetic: 43, bottom: 53 });
+test({ family: "Arial", size: "3em", bold: 800, italic: false,
+ 	alphabetic: 53, bottom: 68 });
+test({ family: "Arial", size: "3em", bold: 800, italic: true,
+	alphabetic: 43, bottom: 53 });
+test({ family: "Times New Roman", size: 40,
+	alphabetic: 36, bottom: 45 });
+
+</script>
+
+
+
+
+
+
