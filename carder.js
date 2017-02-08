@@ -328,11 +328,17 @@ function carder(name, decks, mode) {
 			}
 			
 			var url = ren.url = file.appendChild(document.createElement("INPUT"));
-			var dl = file.appendChild(document.createElement("A"));
 			url.onclick = select;
+			url.value = "_" + name + "_Faces_" + (ren.index + 1) + ".png";
 			
-			dl.innerText = "DL"; dl.href = back.path;
-			url.value = dl.download = "_" + name + "_Faces_" + (ren.index + 1) + ".png";
+			var dataURL;
+			try { dataURL = canvas.toDataURL(); } catch (e) { }
+			
+			if (dataURL) {
+				var dl = file.appendChild(document.createElement("A"));
+				dl.innerText = "DL"; dl.href = canvas.toDataURL();
+				dl.download = url.value;
+			}
 			
 			console.groupEnd(ren.back.src);
 		});

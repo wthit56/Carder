@@ -1,0 +1,99 @@
+<!doctype html><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><body>
+<script src="../glyph.js"></script>
+<canvas id="display"></canvas>
+<label for="input">IN: </label><textarea id="input"></textarea>
+<label for="output">OUTPUT: </label><textarea id="output"></textarea>
+<br />
+<label for="char">Character: </label><input id="char" value="▭︎" />
+<label for="as_text">as text? </label><input id="as_text" type="checkbox" checked />
+<label for="font">Font: </label><input id="font" value="48px Arial" />
+<br />
+<label for="cx">Centre (
+	x: </label><input id="cx" type="number" value="20" step="0.1" />, 
+	<label for="cy">y: </label><input id="cy" type="number" value="20" step="0.1" />
+) 
+<label for="radius">Radius: </label><input id="radius" type="number" value="48", step="0.1" />
+<script>
+
+var glyphs = {
+	food: glyph("🍞", true, "48px Arial", { x: 24.1, y: 25 }, 22.7),
+	stone: glyph("▭︎", true, "48px Arial", { x: 21.7, y: 30.5 }, 21.75),
+	wood: glyph("❚", true, "48px Arial", { x: 10.7, y: 26.2 }, 18),
+	water: glyph("💧",false,"48px Arial",{"x":22.9,"y":26.2},27),
+	building: glyph("🏠",false,"48px Arial",{"x":29.6,"y":31.4},32.2),
+	item: glyph("⚒",false,"48px Arial",{"x":19.3,"y":27.8},19),
+	combat: glyph("⚔",false,"48px Arial",{"x":18.3,"y":27},21.3),
+	into: glyph("➪",false,"48px Arial",{"x":24.4,"y":26.2},20.1),
+	health: glyph("♥",true,"48px Arial",{"x":14.3,"y":27.5},16),
+	monster: glyph("!",true,"48px Webdings",{"x":24,"y":23.9},21.3)
+};
+
+var gap = 10;
+
+var scale = 5;
+
+var canvas = display;
+input.onclick = function() { this.select(); };
+input.onpaste = function(e) {
+	setTimeout(function() {
+		console.log("paste", e);
+		var g = new Function("return [" + input.value + "]")();
+		char.value = g[0];
+		as_text.checked = g[1];
+		font.value = g[2];
+		cx.value = g[3].x;
+		cy.value = g[3].y;
+		radius.value = g[4];
+		render();
+		input.value = "UPDATED";
+	}, 0);
+};
+output.onclick = function() { this.select(); };
+
+document.querySelectorAll("input").forEach(function(i) {
+	i.onchange = i.onkeyup = render;
+});
+char.onchange = char.onkeyup = function() {
+	ctx.save(); {
+		ctx.font = font.value;
+		cx.value = ctx.measureText(char.value).width / 2;
+	} ctx.restore();
+	render();
+};
+
+var ctx = canvas.getContext("2d");
+canvas.width = 400;
+canvas.height = 400;
+
+function render() {
+	var g = glyph(char.value, as_text.checked, font.value, { x: cx.value, y: cy.value }, radius.value);
+	
+	canvas.width = canvas.width;
+	ctx.save(); {
+		g.render(ctx, canvas.width / 2, canvas.height / 2, (canvas.height / 2) - gap);
+	} ctx.restore();
+
+
+	ctx.save(); {
+		ctx.globalCompositeOperation = "xor";
+		ctx.arc(canvas.width / 2, canvas.height / 2, (canvas.height / 2) - gap, 0, Math.PI * 2, true);
+		ctx.rect(0, 0, canvas.width, canvas.height);
+		ctx.rect((canvas.width / 2) - 1,0, 2,canvas.height);
+		ctx.rect(0,(canvas.height / 2) - 1, canvas.width,2);
+		ctx.fill();
+	} ctx.restore();
+	
+	var o = JSON.stringify([char.value, as_text.checked, font.value, { x: cx.valueAsNumber, y: cy.valueAsNumber }, radius.valueAsNumber]);
+	/*
+	char.value = g[0];
+	as_text.checked = g[1];
+	font.value = g[2];
+	cx.value = g[3].x;
+	cy.value = g[3].y;
+	radius.value = g[4];
+		*/
+	output.value = o.substring(1, o.length - 1);
+}
+render();
+
+</script>

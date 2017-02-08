@@ -1,0 +1,54 @@
+<!doctype html><body>
+<link href="styles.css" rel="stylesheet" />
+<style>
+	#demo {display:inline-block;}
+</style>
+<script src="../textbox.js"></script>
+<script src="../font.js"></script>
+<script>
+
+var box = {
+	from: { x: 25, y: 5 }, to: { x: 352, y: 725 }
+};
+var arial = font({ face: "Arial", size: 48, fillStyle: "yellow", strokeStyle: "royalblue", strokeWidth: 5,
+	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
+
+var canvas = document.body.appendChild(document.createElement("CANVAS"));
+canvas.width = box.to.x + 50; canvas.height = box.to.y + 50;
+var ctx = canvas.getContext("2d");
+
+ctx.fillStyle = "#eee";
+ctx.fillRect(box.from.x, box.from.y, box.to.x - box.from.x, box.to.y - box.from.y);
+
+var textonly = [
+	"wrap"," nobreak ", // space rendered at the beginning of a part in the middle of a line
+	"wrap","        space", // wrapping counts spaces at the start of a part *not working*
+	"first break    wrap ", // wrap within same part
+	"break ", // same line
+	"squiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiished ", // long single word on a line, squished
+	"spaces    break ", // whitespace rendered in the middle of a line
+	"spacessssssss             ", // whitespace not rendered at the end of a line
+	// wrapcombined nobreak across multiple parts
+	// wrap after nobreak within same part
+	"wrap wrapc","om","bined wrap",".... ",
+	"startwrap","chunk","chunk","endwrap" // nobreaks across multiple parts break between nobreaks when they would squish
+];
+
+ctx.fillStyle = "black";
+var t = textbox(box);
+ctx.textBaseline = "top";
+var result = t.write(ctx, textonly, arial, 1);
+console.log(result);
+
+var demo = document.body.appendChild(document.createElement("DIV"));
+demo.id = "demo";
+
+demo.style.width = (box.to.x - box.from.x) + "px";
+demo.style.height = (box.to.y - box.from.y) + "px";
+demo.style.backgroundColor = "#eee";
+console.log(demo.style.font = arial.size + "px " + arial.face);
+demo.innerHTML = textonly.join("");
+
+
+
+</script>

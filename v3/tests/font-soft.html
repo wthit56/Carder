@@ -21,29 +21,25 @@ function part() {
 	return { canvas: canvas, ctx: ctx, container: part };
 }
 
-function test_lines(config) {
-	
-}
-
 function test(config) {
-	var p = part();
+	var p = part(), f;
 	var canvas = p.canvas;
 	canvas.width = 850; canvas.height = 100;
 	var ctx = p.ctx;
 	
-	var f = font(config), set;
+	var f = font(config);
 	
 	var gap = 10;
 	var x = gap, y = gap;
 	canvas.height = (f.bottom * 2) + (gap * 3);
 	
-	set = f.set(ctx);
+	var set = f.set(ctx);
 	ctx.textBaseline = "top";
 	ctx.globalCompositeOperation = "destination-over";
 	
-	"top,hanging,middle,alphabetic,ideographic,bottom,small,large".split(",").forEach(function(baseline) {
+	"top,hanging,middle,alphabetic,ideographic,bottom,small,large,colour".split(",").forEach(function(baseline) {
 		ctx.save(); {
-			var twidth, scale = 1, fillText = true, align = true, bl = baseline;
+			var twidth, scale = 1, fillText = true, align = true, use_colour = false, bl = baseline;
 			switch (baseline) {
 				case "small": case "large": {
 					scale = (baseline === "small" ? 0.5 : 1.5);
@@ -53,12 +49,18 @@ function test(config) {
 					align = false;
 				} break;
 				
+				case "colour": {
+					bl = "alphabetic";
+					fillText = false;
+					use_colour = true;
+					align = false;
+				} break;
+				
 				default: {
-					twidth = f.measureText(ctx, baseline).width;
+					twidth = f.measure(ctx, baseline).width;
 				}
 			}
-			console.log(baseline, ctx.textBaseline);
-			
+
 			if (x + twidth > canvas.width - gap) {
 				x = gap; y += f.bottom + gap;
 			}
@@ -69,16 +71,26 @@ function test(config) {
 			
 			ctx.textBaseline = bl;
 			if (align) { ctx.fillStyle = "#d00"; }
-			f.render(ctx, baseline, x, y - 0, null, scale);
+			
+			var order = null;
+			if (use_colour) {
+				ctx.fillStyle = f.fillStyle;
+				if (f.strokeWidth) {
+					ctx.strokeStyle = f.strokeStyle; ctx.lineWidth = f.strokeWidth;
+					order = "fill stroke";
+				}
+			}
+			
+			f.render(ctx, baseline, x, y - 0, null, scale, order);
 			
 			x += twidth + gap;
 		} ctx.restore();
 	});
 	
-	p.container.appendChild(document.createElement("SPAN")).innerText = ctx.font;
+	p.container.appendChild(document.createElement("SPAN")).innerText = set;
 }
 
-test({ family: "Arial", size: 48,
+test({ family: "Arial", size: 48, fillStyle: "yellow", strokeStyle: "royalblue", strokeWidth: 5,
 	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
 test({ family: "Times New Roman", size: 48,
 	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
@@ -97,7 +109,7 @@ test({ family: "Arial", size: "3em", bold: false, italic: true,
  	alphabetic: 43, bottom: 53 });
 test({ family: "Arial", size: "3em", bold: 800, italic: false,
  	alphabetic: 53, bottom: 68 });
-test({ family: "Arial", size: "3em", bold: 800, italic: true,
+test({ family: "Arial", size: "3em", bold: 800, italic: true, strokeWidth: 2,
 	alphabetic: 43, bottom: 53 });
 test({ family: "Times New Roman", size: 40,
 	alphabetic: 36, bottom: 45 });
