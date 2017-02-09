@@ -43,7 +43,7 @@ function test(config) {
 			switch (baseline) {
 				case "small": case "large": {
 					scale = (baseline === "small" ? 0.5 : 1.5);
-					twidth = f.measureText(ctx, baseline, scale).width;
+					twidth = f.measure(ctx, baseline, scale).width;
 					bl = "alphabetic";
 					fillText = false;
 					align = false;
@@ -90,28 +90,28 @@ function test(config) {
 	p.container.appendChild(document.createElement("SPAN")).innerText = set;
 }
 
-test({ family: "Arial", size: 48, fillStyle: "yellow", strokeStyle: "royalblue", strokeWidth: 5,
+test({ face: "Arial", size: 48, fillStyle: "yellow", strokeStyle: "royalblue", strokeWidth: 5,
 	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
-test({ family: "Times New Roman", size: 48,
+test({ face: "Times New Roman", size: 48,
 	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
-test({ family: "Comic Sans MS", size: 48,
+test({ face: "Comic Sans MS", size: 48,
 	top: 0, hanging: 11, middle: 34, alphabetic: 53, ideographic: 67, bottom: 67 });
 
-test({ family: "Arial", size: 40,
+test({ face: "Arial", size: 40,
 	alphabetic: 36, bottom: 44 });
-test({ family: "Arial", size: "3em",
+test({ face: "Arial", size: "3em",
 	alphabetic: 43, bottom: 53 });
-test({ family: "Arial", size: "3em", bold: true,
+test({ face: "Arial", size: "3em", bold: true,
  	alphabetic: 43, bottom: 53 });
-test({ family: "Arial", size: "3em", italic: true,
+test({ face: "Arial", size: "3em", italic: true,
 	alphabetic: 43, bottom: 53 });
-test({ family: "Arial", size: "3em", bold: false, italic: true,
+test({ face: "Arial", size: "3em", bold: false, italic: true,
  	alphabetic: 43, bottom: 53 });
-test({ family: "Arial", size: "3em", bold: 800, italic: false,
+test({ face: "Arial", size: "3em", bold: 800, italic: false,
  	alphabetic: 53, bottom: 68 });
-test({ family: "Arial", size: "3em", bold: 800, italic: true, strokeWidth: 2,
+test({ face: "Arial", size: "3em", bold: 800, italic: true, strokeWidth: 2,
 	alphabetic: 43, bottom: 53 });
-test({ family: "Times New Roman", size: 40,
+test({ face: "Times New Roman", size: 40,
 	alphabetic: 36, bottom: 45 });
 
 </script>

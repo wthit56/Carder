@@ -6,7 +6,7 @@ function textbox(box) {
 			x = box.from.x; y += height;
 		},
 		
-		write: function(ctx, renderers, font, scale, leading) {
+		write: function(ctx, renderers, font, scale, leading, _break) {
 			scale = scale || 1; leading = leading || 0;
 			ctx.save(); {
 				font.set(ctx);
@@ -36,12 +36,11 @@ function textbox(box) {
 								var j = 0, jl = words.length;
 								while (true) {
 									var word = words[j], wrap = false;
-									console.log(word.text, word_count);
-									var w = font.measure(ctx, (word_count > 0 ? word.prespaces : "") + word.text).width,
-										ws = font.measure(ctx, word.prespaces + word.text + word.spaces).width;
+									var w = font.measure(ctx, (word_count > 0 ? word.prespaces : "") + word.text, scale).width,
+										ws = font.measure(ctx, word.prespaces + word.text + word.spaces, scale).width;
 									
 									if (!word.spaces && !word.prespaces) {
-										if (word_count > 0) {
+										if (word_count > 0 && i + 1 < l) {
 											var all_right = lx + ws, wrap = false, index = i + 1, next_width;
 											while (all_right <= box.to.x) { // find width of all nobreak parts
 												var next_text = find_word.exec(renderers[index]); // find next word
@@ -57,7 +56,7 @@ function textbox(box) {
 									
 									if (lx + w > box.to.x) { wrap = true; }
 									if (wrap) {
-										ly += font.bottom + leading;
+										ly += (font.bottom * scale) + leading;
 										if (ly > box.to.y) {
 											console.log("!! overflow !!");
 											return { overflow: true };
@@ -65,9 +64,7 @@ function textbox(box) {
 										
 										layout.push(line = []);
 										lx = box.from.x; word_count = 0;
-										console.log("* wrap");
 									}
-									
 									
 									line.push(p = { font: font, scale: scale, x: lx, y: ly, prespaces: word.prespaces, text: word.text, spaces: word.spaces });
 									if (word.spaces) { word_count++; }
@@ -80,8 +77,12 @@ function textbox(box) {
 						}
 					}
 					
-					console.groupCollapsed("render"); {
+					console.group("render"); {
 						for (var i = 0, t, l = layout.length; i < l; i++) {
+							if (y + (font.bottom * scale) > box.to.y) {
+								return { complete: false };
+							}
+							
 							line = layout[i];
 							if (line.length === 1) {
 								t = line[0];
@@ -91,18 +92,17 @@ function textbox(box) {
 								// config.render = function(ctx, text, x, y, max_width, scale, order) {
 								for (var j = 0, jl = line.length; j < jl; j++) {
 									t = line[j];
-									t.font.render(ctx, (t.prespaces || "") + t.text + (t.spaces || ""), t.x, t.y, null, scale);
+									t.font.render(ctx, (t.prespaces || "") + t.text + (t.spaces || ""), t.x, t.y, null, t.scale);
 								}
 							}
 							
-							x = box.from.x; y += font.bottom + leading;
-							if (y + font.bottom > box.to.y) {
-								return { complete: false };
-							}
+							y += (font.bottom * scale) + leading;
 						}
 					} console.groupEnd("render");
 				}
 			} ctx.restore();
+			
+			y += (_break || 0);
 			
 			return { complete: true };
 		}

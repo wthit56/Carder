@@ -23,7 +23,7 @@ function font(config) {
 	config.render = function(ctx, text, x, y, max_width, scale, order) {
 		if (scale == null) { scale = 1; }
 
-		var y_offset = this[ctx.textBaseline] || 0;
+		var y_offset = (this[ctx.textBaseline] || 0) * scale;
 		ctx.save(); {
 			this.set(ctx);
 			
