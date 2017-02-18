@@ -21,77 +21,108 @@ function part() {
 	return { canvas: canvas, ctx: ctx, container: part };
 }
 
-function test(config) {
-	var p = part(), f;
-	var canvas = p.canvas;
-	canvas.width = 850; canvas.height = 100;
-	var ctx = p.ctx;
+function load_font(font, then) {
+	var url = "https://fonts.googleapis.com/css?family=" + encodeURIComponent(font);
 	
-	var f = font(config);
-	
-	var gap = 10;
-	var x = gap, y = gap;
-	canvas.height = (f.bottom * 2) + (gap * 3);
-	
-	var set = f.set(ctx);
-	ctx.textBaseline = "top";
-	ctx.globalCompositeOperation = "destination-over";
-	
-	"top,hanging,middle,alphabetic,ideographic,bottom,small,large,colour".split(",").forEach(function(baseline) {
-		ctx.save(); {
-			var twidth, scale = 1, fillText = true, align = true, use_colour = false, bl = baseline;
-			switch (baseline) {
-				case "small": case "large": {
-					scale = (baseline === "small" ? 0.5 : 1.5);
-					twidth = f.measure(ctx, baseline, scale).width;
-					bl = "alphabetic";
-					fillText = false;
-					align = false;
-				} break;
-				
-				case "colour": {
-					bl = "alphabetic";
-					fillText = false;
-					use_colour = true;
-					align = false;
-				} break;
-				
-				default: {
-					twidth = f.measure(ctx, baseline).width;
-				}
-			}
+	var link = document.createElement('link');
+	link.rel = 'stylesheet';
+	link.type = 'text/css';
+	link.href = url;
+	document.getElementsByTagName('head')[0].appendChild(link);
 
-			if (x + twidth > canvas.width - gap) {
-				x = gap; y += f.bottom + gap;
-			}
-			
-			if (fillText) {
-				ctx.textBaseline = "top"; ctx.fillStyle = "black"; ctx.fillText(baseline, x, y);
-			}
-			
-			ctx.textBaseline = bl;
-			if (align) { ctx.fillStyle = "#d00"; }
-			
-			var order = null;
-			if (use_colour) {
-				ctx.fillStyle = f.fillStyle;
-				if (f.strokeWidth) {
-					ctx.strokeStyle = f.strokeStyle; ctx.lineWidth = f.strokeWidth;
-					order = "fill stroke";
-				}
-			}
-			
-			f.render(ctx, baseline, x, y - 0, null, scale, order);
-			
-			x += twidth + gap;
-		} ctx.restore();
-	});
-	
-	p.container.appendChild(document.createElement("SPAN")).innerText = set;
+	var image = new Image();
+	image.src = url;
+	image.onerror = then;
 }
 
+function test(config) {
+	load_font(config.face, function() {
+	
+		var s = 2;
+
+		var p = part(), f;
+		var canvas = p.canvas, ctx = p.ctx;
+		
+		var f = font(config);
+		
+		var gap = 10;
+		var x = gap, y = gap;
+		canvas.width = 1800;
+		canvas.height = (gap + ((f.bottom + gap) * 5)) * s;
+		ctx.scale(s, s);
+		
+		var set = f.set(ctx);
+		ctx.textBaseline = "top";
+		ctx.globalCompositeOperation = "destination-over";
+		
+		"top,hanging,middle,alphabetic,ideographic,bottom,small,large,colour".split(",").forEach(function(baseline) {
+			ctx.save(); {
+				var twidth, scale = 1, fillText = true, align = true, use_colour = false, bl = baseline;
+				var text = baseline;
+				switch (baseline) {
+					case "small": case "large": {
+						scale = (baseline === "small" ? 0.5 : 1.5);
+						twidth = f.measure(ctx, text, scale).width;
+						bl = "alphabetic";
+						fillText = false;
+						align = false;
+					} break;
+					
+					case "colour": {
+						bl = "alphabetic";
+						fillText = false;
+						use_colour = true;
+						align = false;
+					} break;
+					
+					default: {
+						twidth = f.measure(ctx, text).width;
+					}
+				}
+
+				if (x + (twidth * scale) > (canvas.width - gap) / s) {
+					x = gap; y += f.bottom + gap;
+				}
+				
+				if (fillText) {
+					ctx.textBaseline = "top"; ctx.fillStyle = "black"; ctx.fillText(text, x, y);
+				}
+				
+				ctx.textBaseline = bl;
+				if (align) { ctx.fillStyle = "#d00"; }
+				
+				var order = null;
+				if (use_colour) {
+					ctx.fillStyle = f.fillStyle;
+					if (f.strokeWidth) {
+						ctx.strokeStyle = f.strokeStyle; ctx.lineWidth = f.strokeWidth;
+						order = "fill stroke";
+					}
+				}
+				
+				f.render(ctx, text, x, y - 0, null, scale, order);
+				
+				x += twidth + gap;
+			} ctx.restore();
+		});
+		
+		ctx.beginPath(); ctx.moveTo(0, gap + f.alphabetic); ctx.lineTo(canvas.width, gap + f.alphabetic);
+		ctx.strokeStyle = "#ccc"; ctx.lineWidth = 2; ctx.stroke();
+		
+		p.container.appendChild(document.createElement("SPAN")).innerText = set;
+	});
+}
+
+test({ face: "Meddon", size: 48,
+	top: 0, hanging: 14, middle: 51, alphabetic: 67, ideographic: 101, bottom: 101 });
+
+/*
 test({ face: "Arial", size: 48, fillStyle: "yellow", strokeStyle: "royalblue", strokeWidth: 5,
 	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
+test({ face: "Arial", size: 48, bold: true,
+	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
+test({ face: "Arial", size: 58, bold: true,
+	top: 0, hanging: 11, middle: 33, alphabetic: 53, ideographic: 65, bottom: 65 });
 test({ face: "Times New Roman", size: 48,
 	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
 test({ face: "Comic Sans MS", size: 48,
@@ -113,7 +144,7 @@ test({ face: "Arial", size: "3em", bold: 800, italic: true, strokeWidth: 2,
 	alphabetic: 43, bottom: 53 });
 test({ face: "Times New Roman", size: 40,
 	alphabetic: 36, bottom: 45 });
-
+//*/
 </script>
 
 

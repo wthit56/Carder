@@ -1,0 +1,38 @@
+<!doctype html><body><script src="../font.js"></script>
+<style>
+canvas {margin:0.5em; box-shadow: 0 0 0.5em black;}
+</style>
+<script>
+
+
+var arial = font({ face: "Arial", size: 48,
+	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
+
+function test(position) {
+	var canvas = document.body.appendChild(document.createElement("CANVAS"));
+	canvas.width = 250; canvas.height = 100;
+	var ctx = canvas.getContext("2d");
+	
+	var x = canvas.width / 2, y =  canvas.height / 2;
+	if (position.indexOf("left") !== -1) { x *= 0.3; }
+	if (position.indexOf("right") !== -1) { x *= 1.7; }
+	
+	var text = position;
+	if (position.indexOf("cap") !== -1) { text = text.toUpperCase(); }
+	
+	arial.render(ctx, text, x, y, null, 0.5, null, position);
+	
+	ctx.fillStyle = "rgba(255,0,0,0.5)";
+	ctx.arc(x, y, 10, 0, Math.PI * 2);
+	ctx.fill();
+}
+
+"top, hanging, middle, alphabetic, ideographic, bottom, mid-cap".split(", ").forEach(function(y) {
+	"left, right, middle".split(", ").forEach(function(x) {
+		test(y + " "  + x);
+	});
+});
+
+
+
+</script>

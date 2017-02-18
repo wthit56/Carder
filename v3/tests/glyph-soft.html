@@ -1,21 +1,32 @@
 <!doctype html><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><body>
 <script src="../glyph.js"></script>
 <canvas id="display"></canvas>
-<label for="input">IN: </label><textarea id="input"></textarea>
-<label for="output">OUTPUT: </label><textarea id="output"></textarea>
-<br />
-<label for="char">Character: </label><input id="char" value="▭︎" />
-<label for="as_text">as text? </label><input id="as_text" type="checkbox" checked />
-<label for="font">Font: </label><input id="font" value="48px Arial" />
-<br />
-<label for="cx">Centre (
-	x: </label><input id="cx" type="number" value="20" step="0.1" />, 
-	<label for="cy">y: </label><input id="cy" type="number" value="20" step="0.1" />
-) 
-<label for="radius">Radius: </label><input id="radius" type="number" value="48", step="0.1" />
+<form>
+	<label for="input">IN: </label><textarea id="input"></textarea>
+	<label for="output">OUTPUT: </label><textarea id="output"></textarea>
+	<br />
+
+	<label for="char">Character: </label><input id="char" value="?" />
+	<label for="as_text">as text? </label><input id="as_text" type="checkbox" checked />
+	<label for="font">Font: </label><input id="font" value="48px Arial" />
+	<label for="colour">Colour: </label><input id="colour" type="color" value="#000000" />
+	<br />
+
+	<label for="cx">Centre (
+		x: </label><input id="cx" type="number" value="0" step="0.1" />, 
+		<label for="cy">y: </label><input id="cy" type="number" value="0" step="0.1" />
+	) 
+	<label for="radius">Radius: </label><input id="radius" type="number" value="0", step="0.1" />
+	<br />
+
+	<label for="sx">Scale (
+		x: </label><input id="sx" type="number" value="1" step="0.1" min="0.01" />, 
+		<label for="sy">y: </label><input id="sy" type="number" value="1" step="0.1" min="0.01" />
+	) 
+	<label for="rotation">Rotation: </label><input id="rotation" type="number" value="0", step="1" />
+	<input type="reset" />
+</form>
 <script>
-
-
 
 var gap = 10;
 
@@ -23,25 +34,37 @@ var scale = 5;
 
 var canvas = display;
 input.onclick = function() { this.select(); };
-input.onpaste = function(e) {
+
+input.onpaste = function(e) { 
+	var self = this;
+	// wait for value to update
 	setTimeout(function() {
-		console.log("paste", e);
-		try {
-			var g = new Function("return [" + input.value + "]")();
-			char.value = g[0];
-			as_text.checked = g[1];
-			font.value = g[2];
-			cx.value = g[3].x;
-			cy.value = g[3].y;
-			radius.value = g[4];
-			render();
-			input.value = "UPDATED";
-		} catch(e) {
-			input.value = "ERROR";
-		}
+		update_from_input(self.value);
 	}, 0);
-};
+}
 output.onclick = function() { this.select(); };
+
+function update_from_input(input) {
+	console.log(input);
+	try {
+		var g = new Function("return [" + input + "]")();
+		char.value = g[0] || "?";
+		as_text.checked = g[1] || true;
+		font.value = g[2] || "48px Arial";
+		cx.value = g[3].x || 0;
+		cy.value = g[3].y || 0;
+		radius.value = g[4] || 0;
+		colour.value = g[5] || "#000000";
+		rotation.value = g[6] || 0;
+		sx.value = g[7] || 1;
+		sy.value = g[8] || 1;
+		input.value = "UPDATED";
+		render();
+	} catch(e) {
+		input.value = "ERROR";
+	}
+}
+update_from_input('"?",true,"48px Arial",{"x":13.3,"y":24.3},16.4,"#40cb1d",30,1.3,0.8');
 
 document.querySelectorAll("input").forEach(function(i) {
 	i.onchange = i.onkeyup = render;
@@ -59,7 +82,7 @@ canvas.width = 400;
 canvas.height = 400;
 
 function render() {
-	var g = glyph(char.value, as_text.checked, font.value, { x: cx.value, y: cy.value }, radius.value);
+	var g = glyph(char.value, as_text.checked, font.value, { x: cx.valueAsNumber, y: cy.valueAsNumber }, radius.valueAsNumber, colour.value, rotation.valueAsNumber, sx.valueAsNumber, sy.valueAsNumber);
 	
 	canvas.width = canvas.width;
 	ctx.save(); {
@@ -76,9 +99,15 @@ function render() {
 		ctx.fill();
 	} ctx.restore();
 	
-	var o = JSON.stringify([char.value, as_text.checked, font.value, { x: cx.valueAsNumber, y: cy.valueAsNumber }, radius.valueAsNumber]);
+	var o = JSON.stringify([char.value, as_text.checked, font.value, { x: cx.valueAsNumber, y: cy.valueAsNumber }, radius.valueAsNumber, colour.value, rotation.valueAsNumber, sx.valueAsNumber, sy.valueAsNumber]);
 	output.value = o.substring(1, o.length - 1);
 }
 render();
+
+
+document.forms[0].onreset = function() {
+	// wait
+	setTimeout(render, 0);
+};
 
 </script>
