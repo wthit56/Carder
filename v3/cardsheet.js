@@ -1,4 +1,7 @@
 function cardsheet(config, cards) {
+	if (!config) { throw "No config found."; }
+	if (!cards) { throw "No cards found."; }
+	
 	var cols, rows;
 	var cw = config.card_size.width, ch = config.card_size.height;
 	if (config.grid) {
@@ -29,7 +32,7 @@ function cardsheet(config, cards) {
 		}
 	}
 	else {
-		var i = cards.length, split = 1, lowest, lowest_split = 1, lowest_waste = Infinity, lowest_split_ratio = 1, lowest_waste_ratio = Infinity, lowest_ratio;
+		var i = cards.length, split = 1, lowest = { cols: 10, rows: 7 }, lowest_split = 1, lowest_waste = Infinity, lowest_split_ratio = 1, lowest_waste_ratio = Infinity, lowest_ratio;
 		while (i / split > 1) {
 			var r = eval_layout(cards.length, null, null, cw, ch, split, "jump for waste");
 			
@@ -50,14 +53,13 @@ function cardsheet(config, cards) {
 	var canvasses = [];
 	var canvas, ctx;
 	
-	var cw, ch;
+	var card_info = [], current_cardsheet;
 	var max_page = (rows * cols) - 1, index_offset = -max_page;
 	for (var i = 0, l = cards.length; i < l; i++) {
 		var index = i - index_offset;
 		if (index >= max_page) { // too many cards; make a new sheet
 			canvas = document.createElement("CANVAS");
-			canvas.width = width;
-			canvas.height = height;
+			canvas.width = width; canvas.height = height;
 			
 			ctx = canvas.getContext("2d");
 			ctx.fillStyle = "#aaa";
@@ -67,7 +69,7 @@ function cardsheet(config, cards) {
 				render_card(ctx, cw, ch, cols - 1, rows - 1, config.hidden);
 			}
 			
-			canvasses.push(canvas);
+			canvasses.push(current_cardsheet = { cardsheet: canvas, cols: cols, rows: rows });
 			
 			index_offset += max_page;
 			index = 0;
@@ -77,11 +79,12 @@ function cardsheet(config, cards) {
 		var x = index % cols;
 		var y = (index - x) / cols;
 		
-		render_card(ctx, cw, ch, x, y, card.image, card.sideways);
-		card.cardsheet = canvas; card.index = index;
+		render_card(ctx, cw, ch, x, y, card);
+	
+		card_info.push(card.$cardsheet_info = { cardsheet: current_cardsheet, index: index });
 	}
 	
-	return canvasses;
+	return { cards: card_info, cardsheets: canvasses };
 }
 
 function next_power(n) {
@@ -97,7 +100,6 @@ function eval_layout(card_count, _cols, _rows, card_width, card_height, split, j
 		var csq = card_width * card_height, per = (Math.ceil(card_count / split) + 1);
 		var side = Math.sqrt(csq * per);
 		p = next_power(side);
-		
 		
 		if (card_width <= card_height) {
 			cols = Math.min(Math.floor(p / card_width), 10); rows = Math.ceil(per / cols);
@@ -123,16 +125,13 @@ function eval_layout(card_count, _cols, _rows, card_width, card_height, split, j
 		var sq = width * height;
 		
 		var waste = ((p * p) - sq) * split;
-		return { split: split, cols: cols, rows: rows, width: width, height: height, memory_side: p, waste: waste };
+		var r = { split: split, cols: cols, rows: rows, width: width, height: height, memory_side: p, waste: waste };
+		return r;
 	}
 }
 
 function render_card(ctx, cw, ch, x, y, image) {
 	ctx.save(); {
-		var _cw, _ch;
-		ctx.translate(x * cw, y * ch);
-		_cw = cw; _ch = ch;
-		
-		ctx.drawImage(image, 0,0, _cw, _ch);
+		ctx.drawImage(image, x * cw, y * ch, cw, ch);
 	} ctx.restore();
 }

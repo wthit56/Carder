@@ -40,9 +40,10 @@ function card(config, data) {
 														r = { glyph: config.glyphs[p.from ? m.replace(p.find, p.from) : p.as], shadow: p.shadow, shadow_blur: p.shadow_blur }
 													} break;
 													case "text": {
-														if (p.italic) { console.log(p); }
-														console.log(p);
 														r = { text: p.from ? m.replace(p.find, p.from) : p.as, font: p.font, scale: p.scale, bold: p.bold, italic: p.italic };
+													} break;
+													case "break": {
+														r = { break: true };
 													} break;
 												}
 												
@@ -81,18 +82,14 @@ function card(config, data) {
 							if (named.italic && !_font.italic) {
 								if (_font.italic) { _font = _font.italic; }
 								else {
-									console.log("faux italic");
 									var b = Object.create(_font);
 									b.italic = true;
 									_font = b;
 								}
 							}
-			
-							
-
 							
 							var result = t.write(ctx, string, _font, named.scale, named.leading || 0, named.break || 0);
-							if (!result.complete) { console.log("Could not complete render"); }
+							if (!result.complete) { console.warn("Could not complete render"); }
 						}
 					}
 				} break;
@@ -155,7 +152,7 @@ function card(config, data) {
 								if (hor) { x += size + (area.break || 0); }
 								else { y += size + (area.break || 0); }
 								
-								if ((hor && x + size > area.box.to.x) || (!hor && y + size > area.box.to.y)) { console.log("card list " + i + " overflow"); break; }
+								if ((hor && x + size > area.box.to.x) || (!hor && y + size > area.box.to.y)) { console.warn("card list " + i + " overflow"); break; }
 							}
 						} ctx.restore();
 					}

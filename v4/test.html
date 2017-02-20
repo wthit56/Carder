@@ -1,0 +1,55 @@
+<!doctype html>
+<script src="then.js"></script>
+<script src="make_canvas.js"></script>
+<script src="simple_transform.js"></script>
+<script src="images.js"></script>
+<style>
+	canvas { box-shadow: 0 0 3px rgba(0,0,0,0.5); margin: 3px; }
+</style>
+<body>
+<script>
+	
+var add_card_to_body = function() {
+	document.body.appendChild(this.render);
+}
+	
+var cards_rendered = then();
+	
+var cards = [
+	{ resource: "wood" }
+].map(function(c) {
+	var size = { width: 80, height: 120, scale: 3 };
+	var canvas = make_canvas(size), ctx = canvas.context;
+	
+	var complete = cards_rendered.add();
+
+	var sprites = images();
+	var square_black = sprites.add("test-images/square-black.png");
+	var food = sprites.add("test-images/icons/food.png");
+	var town = sprites.add("test-images/icons/town.png");
+	var dragon = sprites.add("test-images/monsters/dragon.png");
+	
+	sprites.then(function() {
+		document.body.appendChild(canvas);
+		// square.render(canvas, { pixel: true, scale: 2, position: canvas.middle, rotate: "0deg" });
+		// square_black.render(canvas, { pixel: true, centre: canvas.middle, rotate: "45deg", scale: { x: 0.5, y: 1.1 } });
+		var overlay = food.overlay("darken", { alpha: 0.3, overlay: "green" });
+		overlay.render(canvas, { pixel: true, centre: canvas.centre, scale: 0.8 });
+		
+		complete();
+	});
+	
+	return { render: canvas, size: size, data: c };
+});
+
+cards_rendered.then(function() {
+	cards.forEach(function(c) {
+		// document.body.appendChild(c.render);
+	});
+});
+	
+// var c = card({ title: "blah" }, ).then(add_card_to_body);
+
+
+
+</script>

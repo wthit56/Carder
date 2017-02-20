@@ -26,7 +26,7 @@ function textbox(box) {
 							if (lx + radius > box.to.x) {
 								ly += (font.bottom * scale) + leading;
 								if (ly > box.to.y) {
-									console.log("glyph overflow, part " + i);
+									console.warn("glyph overflow, part " + i);
 									return { overflow: true };
 								}
 								
@@ -42,6 +42,12 @@ function textbox(box) {
 							
 							lx += radius * 2;
 						}
+						else if (r.break) {
+							ly += (_font.bottom * scale) + leading + _break;
+							
+							layout.push(line = []);
+							lx = box.from.x; word_count = 0;
+						}
 						else {
 							var text = null, font, scale;
 							
@@ -50,7 +56,6 @@ function textbox(box) {
 							}
 							else if (r.font) {
 								text = r.text; font = r.font; scale = r.scale;
-								console.log("renderer", r);
 								
 								if (r.bold && !font.bold) {
 									if (font.bold) { font = font.bold; }
@@ -63,7 +68,6 @@ function textbox(box) {
 								if (r.italic && !font.italic) {
 									if (font.italic) { font = font.italic; }
 									else {
-										console.log("faux italic");
 										var b = Object.create(font);
 										b.italic = true;
 										font = b;
@@ -114,7 +118,7 @@ function textbox(box) {
 										if (wrap) {
 											ly += (font.bottom * scale) + leading;
 											if (ly > box.to.y) {
-												console.log("text overflow part " + i);
+												console.warn("text overflow part " + i);
 												return { overflow: true };
 											}
 											
@@ -139,6 +143,8 @@ function textbox(box) {
 						}
 					}
 					
+					
+					
 					for (var i = 0, t, l = layout.length; i < l; i++) {
 						if (y + (_font.bottom * scale) > box.to.y) {
 							return { complete: false };
@@ -156,7 +162,7 @@ function textbox(box) {
 								if (t.glyph) {
 									ctx.save(); {
 										if (t.shadow) {
-											console.log(t.shadow, t.shadow_blur);
+											console.log("glyph shadow", t.shadow, t.shadow_blur);
 											ctx.shadowBlur = t.shadow_blur; ctx.shadowColor = t.shadow;
 										}
 										t.glyph.render(ctx, t.x, t.y, t.radius);

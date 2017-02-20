@@ -23,12 +23,12 @@ function cards(size, n) {
 		var sideways = Math.random() > 0.5, w, h;
 		w = size.width; h = size.height;
 		
-		var o = {}; o.image = card(w, h, i);
+		var o = card(w, h, i);
 		results.push(o);
 		
 		if (show_cards) {
 			document.body.appendChild(o.image);
-			o.image.style.width = "100px";
+			o.style.width = "100px";
 		}
 		i++;
 	}
