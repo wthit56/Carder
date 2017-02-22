@@ -1,4 +1,4 @@
-var then = function() {
+var then = function(prerequisites) {
 	var complete = 0, total = 0, after = function() { };
 	var oncomplete = function() {
 		if (after && (++complete >= total)) {
@@ -6,7 +6,7 @@ var then = function() {
 		}
 	};
 	
-	return {
+	var obj = {
 		add: function() {
 			total++;
 			return oncomplete;
@@ -26,4 +26,12 @@ var then = function() {
 			return this;
 		}
 	};
+	
+	if (prerequisites) {
+		prerequisites.forEach(function(p) {
+			if (p.then) { p.then(obj.add()); }
+		});
+	}
+	
+	return obj;
 };

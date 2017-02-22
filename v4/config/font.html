@@ -1,0 +1,242 @@
+<!doctype html><body>
+<script src="../then.js"></script>
+<script src="../fonts.js"></script>
+<style>
+
+.box { float:left; margin:10px; padding:10px; text-align:center; box-shadow:0 0 5px rgba(0,0,0,0.5); position:relative; }
+.box h2 { margin:0; }
+.box canvas { box-shadow:0 0 5px rgba(0,0,0,0.15); display:block; margin:10px 0; }
+.box input { width: 50px; text-align:center; }
+
+#font { width: 100px; }
+#size { width: 50px; }
+
+#IO { float:right; }
+#IO .side { float:left; margin-left:5px; }
+</style>
+
+<div id="IO">
+	<div class="side">
+		<label for="input">INPUT</label><br />
+		<textarea id="input"></textarea>
+	</div>
+	<div class="side">
+		<label for="output">OUPUT</label><br />
+		<textarea id="output"></textarea>
+	</div>
+</div>
+
+<label for="test">Test Text: </label><input id="test" value="Txp" />
+Display Type:
+	<label for="bor" title="see as little red as possible">black-on-red </label><input id="bor" name="display" type="radio" checked />
+	<label for="invert" title="see as little black a possible">invert </label><input id="invert" name="display" type="radio" />
+<label for="zoom">Zoom:</label><input id="zoom" type="range" min="1" max="10" value = "1" />
+
+<br />
+
+<form id="font_form">
+	<label for="font">Font: </label><input id="font" value="Arial" />
+	<label for="size">Size: </label><input id="size" type="number" value="48" />px
+	<label for="bold">Bold: </label><input id="bold" type="checkbox" />
+	<label for="italic">Italic: </label><input id="italic" type="checkbox" />
+</form>
+<!--
+<div id="middle" class="box baseline"><h2>Middle</h2><canvas></canvas><input id="middle-px" type="number" value="10" /></div>
+-->
+<script>
+var do_updates = (function() { // updates
+	function update(p, name) {
+		if (name in p) {
+			document.getElementById(name).value = p[name];
+		}		
+	}
+	function update_baseline(p, name) {
+		if (name in p) {
+			document.getElementById(name + "-value").value = p[name];
+		}
+	}
+	function do_updates(p) {
+		font_form.reset();
+		font.value = p.face;
+		update(p, "size");
+		update(p, "bold");
+		update(p, "italic");
+		
+		update_baseline(p, "top");
+		update_baseline(p, "hanging");
+		update_baseline(p, "middle");
+		update_baseline(p, "alphabetic");
+		update_baseline(p, "ideographic");
+		update_baseline(p, "bottom");
+
+		if (!(font.value in fonts)) {
+			fonts[font.value] = true;
+			load_font.add({ face: font.value });
+		}
+		render();
+
+		input.value = "UPDATED";
+	}
+	
+	return do_updates;
+})();
+
+(function() { // IO
+	var timerid;
+	input.onpaste = function() {
+		clearTimeout(timerid);
+		timerid = setTimeout(parse, 0);
+	};
+
+	function parse() {
+		var p;
+		try {
+			p = JSON.parse(input.value);
+			
+		} catch (e) {
+			try {
+				p = new Function("return (" + input.value + ");")();
+			}
+			catch(e) {
+				prompt("Please paste the following into an email and send it to wthit56"+"@"+"gma"+"il.com", e.message + "\n\n" + e.stack);
+				input.value = "ERROR";
+				return;
+			}
+		}
+		
+		do_updates(p);
+	}
+
+	input.onclick = output.onclick = function() {
+		this.select();
+	};
+})();
+
+var boxes = {};
+
+var baselines = ["top", "hanging", "middle", "alphabetic", "ideographic", "bottom"];
+baselines.forEach(function(b, i) {
+	var box = boxes[b] = document.body.appendChild(document.createElement("DIV"));
+	box.id = b; box.className = "box baseline";
+	box.innerHTML = '<h2>' + b + '</h2><canvas></canvas><input type="number" value="' + (i * 10) + '" id="' + b + '-value" />';
+	
+	box.input = box.querySelector("input");
+	
+	var c = box.canvas = box.querySelector("canvas");
+	c.context = c.getContext("2d");
+	
+	var start = 0, base = 0;
+	c.onmousedown = function(e) {
+		start = e.pageY; base = box.input.valueAsNumber;
+		window.onmousemove = function(e) {
+			box.input.value = base + (e.pageY - start);
+			box.input.onchange();
+		};
+		window.onmouseup = function(e) {
+			box.input.value = base + (e.pageY - start);
+			box.input.onchange();
+			window.onmousemove = null;
+			window.onmouseup = null;
+		};
+		e.preventDefault();
+	};
+	
+});
+
+function baseline(font, baseline) {
+	var box = boxes[baseline];
+	var canvas = box.canvas, ctx = canvas.context;
+	
+	var pad = 10, s = zoom.valueAsNumber;
+	var text_size = font.measure(ctx, test.value, 1);
+	canvas.width = pad + text_size.width * s + pad;
+	canvas.height = pad + Math.max(20, text_size.height) * s + pad;
+	
+	font.set(ctx);
+	
+	ctx.textBaseline = baseline;
+	if (bor.checked) { ctx.fillStyle = "red"; }
+	font.render(ctx, test.value, pad, pad, null, null, s, null);
+	if (!bor.checked) { ctx.globalCompositeOperation = "destination-out"; }
+	
+	ctx.textBaseline = "top";
+	ctx.fillStyle = "black";
+	ctx.scale(s, s);
+	ctx.fillText(test.value, pad / s, pad / s);
+}
+
+function debounce(then, timeout) {
+	var timerid;
+	var trigger = function() {
+		clearTimeout(timerid);
+		then();
+	};
+	return {
+		trigger: trigger,
+		try: function() {
+			clearTimeout(timerid);
+			timerid = setTimeout(trigger, timeout);
+		}
+	};
+}
+
+Array.from(document.querySelectorAll("input:not(#font):not(#zoom)")).forEach(function(i) {
+	var b = debounce(render, 500);
+	i.onchange = b.trigger;
+	i.oninput = b.try;
+});
+
+document.querySelector("#zoom").oninput = function() {
+	render();
+};
+
+(function() { // font change
+	var fonts = {};
+	
+	var b = debounce(function() {
+		if (!(i.value in fonts)) {
+			fonts[i.value] = true;
+			load_font.add({ face: i.value });
+		}
+		render();
+	}, 500);
+	
+	var i = document.querySelector("#font");
+	i.onchange = b.trigger;
+	i.onkeyup = function() {
+		if (!(i.value in fonts)) {
+			b.try();
+		}
+		else {
+			b.trigger();
+		}
+	};
+})();
+
+var load_font = fonts();
+load_font.add({ face: font.value });
+function render() {
+	var f = fonts.font({
+		face: font.value, size: size.valueAsNumber,
+		bold: bold.checked, italic: italic.checked,
+		
+		top: boxes["top"].input.valueAsNumber,
+		hanging: hanging.input.valueAsNumber,
+		middle: middle.input.valueAsNumber,
+		alphabetic: alphabetic.input.valueAsNumber,
+		ideographic: ideographic.input.valueAsNumber,
+		bottom: bottom.input.valueAsNumber
+	});
+	
+	output.value = JSON.stringify(f);
+	
+	load_font.then(function() {
+		baselines.forEach(function(b) {
+			baseline(f, b);
+		});
+	});
+}
+render();
+
+</script>
+<script src="http://localhost:35729/livereload.js"></script>

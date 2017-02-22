@@ -3,8 +3,10 @@
 <script src="make_canvas.js"></script>
 <script src="simple_transform.js"></script>
 <script src="images.js"></script>
+<script src="fonts.js"></script>
+<script src="colour.js"></script>
 <style>
-	canvas { box-shadow: 0 0 3px rgba(0,0,0,0.5); margin: 3px; }
+	canvas { box-shadow: 0 0 3px rgba(0,0,0,0.5); margin:3px; }
 </style>
 <body>
 <script>
@@ -14,42 +16,117 @@ var add_card_to_body = function() {
 }
 	
 var cards_rendered = then();
-	
-var cards = [
-	{ resource: "wood" }
+var _fonts = fonts();
+
+var arial = _fonts.add({ face: "Arial", size: 48,
+	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
+var times = _fonts.add({ face: "Times New Roman", size: 48,
+	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
+var meddon = _fonts.add({ face: "Meddon", size: 48,
+	top: 0, hanging: 14, middle: 51, alphabetic: 67, ideographic: 101, bottom: 101 });
+
+var cards = [];
+
+var card_size = { width: 250, height: 350, scale: 3 };
+
+var resources = [
+	{ resource: "food" },
+	{ resource: "water" },
+	{ resource: "wood" },
+	{ resource: "stone" },
 ].map(function(c) {
-	var size = { width: 80, height: 120, scale: 3 };
-	var canvas = make_canvas(size), ctx = canvas.context;
+	var canvas = make_canvas(card_size, "white"), ctx = canvas.context;
+	embiggenner(canvas, card_size);
+	document.body.appendChild(canvas);
 	
 	var complete = cards_rendered.add();
 
-	var sprites = images();
-	var square_black = sprites.add("test-images/square-black.png");
-	var food = sprites.add("test-images/icons/food.png");
-	var town = sprites.add("test-images/icons/town.png");
-	var dragon = sprites.add("test-images/monsters/dragon.png");
+	var _images = images();
+	var icon = _images.add("test-images/icons/" + c.resource + ".png");
+	var square = _images.add("test-images/square-black.png");
 	
-	sprites.then(function() {
-		document.body.appendChild(canvas);
-		// square.render(canvas, { pixel: true, scale: 2, position: canvas.middle, rotate: "0deg" });
-		// square_black.render(canvas, { pixel: true, centre: canvas.middle, rotate: "45deg", scale: { x: 0.5, y: 1.1 } });
-		var overlay = food.overlay("darken", { alpha: 0.3, overlay: "green" });
-		overlay.render(canvas, { pixel: true, centre: canvas.centre, scale: 0.8 });
+	var centre = { x: "middle", y: "middle" };
+	var rcap = c.resource[0].toUpperCase() + c.resource.substr(1);
+	
+	then([_images, fonts]).then(function() {
+		canvas.context.sub(function() {
+			var shadow_colour = colour("black");
+			shadow_colour.a = 0.4;
+			
+			ctx.shadow(shadow_colour, 50);
+			
+			var iscale = 0.07, icentre = 40;
+			icon.render(canvas, { position: { x: icentre, y: icentre }, align: centre, scale: iscale, lighten: "white" });
+			icon.render(canvas, { position: { x: card_size.width - icentre, y: card_size.height - icentre }, align: centre, scale: iscale, rotate: 180, lighten: "white" });
+		});
+		
+		icon.render(canvas, { position: canvas.centre, align: centre, scale: 0.28 });
 		
 		complete();
 	});
 	
-	return { render: canvas, size: size, data: c };
+	return { name: rcap + " - Resource", description: "Used to build buildings, activate items, and distract monsters",
+		render: canvas, size: card_size, hidden: null };
+});
+cards.push.apply(cards, resources);
+
+var monsters = [
+	{ name: "Fire Wyrm", img: "fire-wyrm", health: 5, combat: 5, item: 3,
+		effect: "Only razes buildings.\n{water}: prevent the monster from razing 1 building." },
+	{ name: "Dragon", img: "dragon", health: 5, combat: 5, item: 3,
+		effect: "{stone} does not reduce combat." },
+	{ name: "Giant", img: "giant", health: 5, combat: 5, item: 3,
+		effect: "Destroys a building instead of razing it." },
+	{ name: "Hydra", img: "hydra", health: 5, combat: 5, item: 3,
+		effect: "+1{health} every turn." }
+].map(function(c) {
+	var canvas = make_canvas(card_size, "white"), ctx = canvas.context;
+	embiggenner(canvas, card_size);
+	document.body.appendChild(canvas);
+	
+	var complete = cards_rendered.add();
+	
+	var load_images = images();
+	var image = load_images.add("test-images/monsters/" + c.name.toLowerCase().replace(/ /g, "-") + ".png");
+	
+	load_images.then(function() {
+		image.render(canvas, { scale: "no stretch" })
+	});
+	
+	complete();
 });
 
 cards_rendered.then(function() {
+	console.log("cards rendered");
 	cards.forEach(function(c) {
-		// document.body.appendChild(c.render);
+		console.log("cards");
 	});
 });
 	
 // var c = card({ title: "blah" }, ).then(add_card_to_body);
 
+function embiggenner(canvas, size) {
+	canvas.style.width = size.width + "px";
+	canvas.onclick = function() {
+		canvas.embiggen = !canvas.embiggen;
+		
+		if (canvas.embiggen) {
+			canvas.style.left = canvas.offsetLeft + "px";
+			canvas.style.top = canvas.offsetTop + "px";
+			canvas.style.position = "absolute";
+			canvas.style.width = "";
+			canvas.style.borderRadius = "30px";
+		}
+		else {
+			canvas.style.position = "";
+			canvas.style.width = size.width + "px";
+			canvas.style.borderRadius = "";
+		}
+	};
+	
+	canvas.style.width = size.width + "px";
+}
 
 
 </script>
+<script src="http://localhost:35729/livereload.js"></script>
