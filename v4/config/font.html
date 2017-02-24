@@ -4,9 +4,9 @@
 <style>
 
 .box { float:left; margin:10px; padding:10px; text-align:center; box-shadow:0 0 5px rgba(0,0,0,0.5); position:relative; }
-.box h2 { margin:0; }
-.box canvas { box-shadow:0 0 5px rgba(0,0,0,0.15); display:block; margin:10px 0; }
-.box input { width: 50px; text-align:center; }
+.box h2 { margin:0 0 10px 0; }
+.box canvas { box-shadow:0 0 5px rgba(0,0,0,0.15); display:block; }
+.box input { width: 50px; text-align:center; margin-top:10px; }
 
 #font { width: 100px; }
 #size { width: 50px; }
@@ -44,6 +44,8 @@ Display Type:
 <div id="middle" class="box baseline"><h2>Middle</h2><canvas></canvas><input id="middle-px" type="number" value="10" /></div>
 -->
 <script>
+var pad = 20;
+
 var do_updates = (function() { // updates
 	function update(p, name) {
 		if (name in p) {
@@ -111,6 +113,9 @@ var do_updates = (function() { // updates
 		this.select();
 	};
 })();
+input.value = JSON.stringify({ face: "Meddon", size: 48,
+	top: 0, hanging: 14, middle: 51, alphabetic: 67, ideographic: 101, bottom: 101 });
+input.onpaste();
 
 var boxes = {};
 
@@ -147,7 +152,7 @@ function baseline(font, baseline) {
 	var box = boxes[baseline];
 	var canvas = box.canvas, ctx = canvas.context;
 	
-	var pad = 10, s = zoom.valueAsNumber;
+	var s = zoom.valueAsNumber;
 	var text_size = font.measure(ctx, test.value, 1);
 	canvas.width = pad + text_size.width * s + pad;
 	canvas.height = pad + Math.max(20, text_size.height) * s + pad;
@@ -186,9 +191,7 @@ Array.from(document.querySelectorAll("input:not(#font):not(#zoom)")).forEach(fun
 	i.oninput = b.try;
 });
 
-document.querySelector("#zoom").oninput = function() {
-	render();
-};
+document.querySelector("#zoom").oninput = render;
 
 (function() { // font change
 	var fonts = {};
@@ -213,6 +216,14 @@ document.querySelector("#zoom").oninput = function() {
 	};
 })();
 
+{ // lines display
+	var lines = document.body.appendChild(document.createElement("DIV"));
+	lines.className = "box";
+	lines.innerHTML = "<h2>Baselines</h2><canvas></canvas>";
+	lines.canvas = lines.childNodes[1];
+	lines.canvas.context = lines.canvas.getContext("2d");
+}
+
 var load_font = fonts();
 load_font.add({ face: font.value });
 function render() {
@@ -234,6 +245,31 @@ function render() {
 		baselines.forEach(function(b) {
 			baseline(f, b);
 		});
+		
+		var c = lines.canvas, ctx = lines.canvas.context;
+		var m = f.measure(ctx, test.value, zoom.valueAsNumber).width;
+		var labels = 100;
+		c.width = pad + labels + m + labels + pad; c.height = pad + (f.bottom * zoom.valueAsNumber) + pad;
+		
+		ctx.lineWidth = 2;
+		ctx.font = "14px Arial"; ctx.textBaseline = "bottom";
+		ctx.translate(pad, pad);
+		
+		var i = 0;
+		function hor(baseline) {
+			ctx.beginPath(); ctx.moveTo(0, f[baseline] * zoom.valueAsNumber); ctx.lineTo(labels + m + labels, f[baseline] * zoom.valueAsNumber); ctx.stroke();
+			
+			i++;
+			
+			ctx.fillText(baseline, (labels + m + labels - ctx.measureText(baseline).width) * (i & 1), f[baseline] * zoom.valueAsNumber);
+		}
+		
+		hor("top"); hor("hanging"); hor("middle"); hor("alphabetic"); hor("ideographic"); hor("bottom");
+		
+		ctx.globalCompositeOperation = "xor";
+
+		f.render(ctx, test.value, (labels + m + labels) / 2, 0, null, "top middle", zoom.valueAsNumber);
+		
 	});
 }
 render();
