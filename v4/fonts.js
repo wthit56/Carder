@@ -4,24 +4,28 @@ var fonts = (function() {
 
 	var fonts = function() {
 		var next = then();
+		var sent = {};
 		
 		return {
 			add: function(config) {
-				var url = "https://fonts.googleapis.com/css?family=" + encodeURIComponent(config.face);
-				
-				var link = document.createElement('link');
-				link.rel = 'stylesheet';
-				link.type = 'text/css';
-				link.href = url;
-				document.head.appendChild(link);
-				
-				var image = new Image();
-				image.src = url;
-				var complete = next.add();
-				image.onerror = function(e) {
-					complete();
+				if (!(config.face in sent)) {
+					var url = "https://fonts.googleapis.com/css?family=" + encodeURIComponent(config.face);
+					
+					var link = document.createElement('link');
+					link.rel = 'stylesheet';
+					link.type = 'text/css';
+					link.href = url;
+					document.head.appendChild(link);
+					
+					var image = new Image();
+					image.src = url;
+					var complete = next.add();
+					image.onerror = function(e) {
+						complete();
+					}
+					
+					sent[config.face] = true;
 				}
-				
 				return fonts.font(config);
 			},
 			then: function(action) {

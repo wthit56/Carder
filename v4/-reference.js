@@ -1,3 +1,7 @@
+if (typeof fonts != "function") {
+	alert("fonts.js must be added before glyphs.js");
+}
+
 function fonts() {
 	return {
 		add: function(config) {
@@ -10,8 +14,7 @@ function fonts() {
 		}
 	}
 }
-
-function font(config) {
+fonts.font = function(config) {
 	config.face == string; // name of the font
 	config.size == number; // font size in pixels
 	config.bold == boolean;
@@ -127,7 +130,6 @@ images.render = function(canvas, image, config) {
 	
 	canvas.drawImage(image);
 };
-
 images.overlay = function(source, operation, initial alpha, overlay, debug) {
 	source == Image;
 	operation == string; // globalCompositeOperation
@@ -137,6 +139,61 @@ images.overlay = function(source, operation, initial alpha, overlay, debug) {
 	debug == boolean; // defaults to false
 }
 
-	
-	
-	
+function glyphs() {
+	return {
+		add: function(char, as_text, font, centre, radius, colour, rotation, scale_x, scale_y) {
+			// before font is loaded
+			return glyph; // using same arguments
+		},
+		then: function(next) {
+			// when all fonts are loaded and glyphs are ready to use
+			next();
+		}
+	}
+}
+glyphs.glyph = function(char, as_text, font, centre, radius, colour, rotation, scale_x, scale_y) {
+	{ // arguments
+		char == string; // preferably a single character so that as_text works
+		font == string; // full font css string (eg. "40px Arial")
+		colour == string; // css colour; glyph will use this colour as the fill
+		
+		radius == number; // pixels from the centre to the edge of the glyph
+		// used for automatic scaling
+		
+		as_text |= false;
+		as_text == boolean; // if true, special character will be added
+		// that turns most unicode characters into black and white mode
+		
+		{ // transformation applied in the following order:
+			rotation == number; // degrees to rotate around centre
+			
+			scale_x == number; scale_y == number;
+			
+			centre |= { x: 0, y: 0 }; // pixel position of "centre" of the character
+			centre.x == number; centre.y == number;
+		}
+	}
+
+	return {
+		char, font, centre, radius, colour,
+		
+		render: function(ctx, x, y, radius, fill_override, rotate) {
+			x == number; y == number; // centre to render the glyph from
+			radius == number; // the maximum radius the glyph can be
+			// rendered glyph will be scaled to match
+			
+			{ // optional
+				fill_override == string; // css colour;
+				// glyph will be filled with colour instead of the configured setting
+				rotate == number; // will be added to configured rotation
+			}
+		},
+		measure: function(ctx, scale) { // scrap?
+			scale |= 1;
+			return {
+				width: number, height: number
+				// size of glyph to scale
+			}
+		}
+	};
+}
