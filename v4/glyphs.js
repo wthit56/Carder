@@ -1,3 +1,8 @@
+if (typeof fonts != "function") {
+	alert("fonts.js must be added before glyphs.js");
+}
+
+
 var glyphs = function() {
 	var load_fonts = fonts();
 	return {
@@ -19,11 +24,10 @@ glyphs.glyph = function glyph(char, as_text, font, centre, radius, colour, rotat
 	return {
 		char: char + (as_text ? "\uFE0E" : ""), font: font,
 		centre: centre, radius: radius, colour: colour,
-		
+		rotation: rotation, scale_x: scale_x, scale_y: scale_y,
+				
 		render: function(ctx, x, y, radius, fill_override, rotate) {
-			rotate = (rotation || 0) + (rotate || 0);
-			var sx = scale_x == null ? 1 : scale_x,
-				sy = scale_y == null ? 1 : scale_y;
+			rotate = (this.rotation || 0) + (rotate || 0);
 				
 			ctx.save(); {
 				ctx.textBaseline = "middle";
@@ -33,12 +37,13 @@ glyphs.glyph = function glyph(char, as_text, font, centre, radius, colour, rotat
 				ctx.translate(x, y);
 				
 				var scale = radius / this.radius;
+				var sx = (this.scale_x == null ? 1 : this.scale_x) * scale,
+				sy = (this.scale_y == null ? 1 : this.scale_y) * scale;
+				
 				if (rotate !== 0) {
 					ctx.rotate(rotate * Math.PI / 180);
 				}
-				if (scale !== 1) {
-					ctx.scale(scale * sx, scale * sy);
-				}
+				ctx.scale(sx, sy);
 				
 				ctx.fillText(this.char, -this.centre.x, -this.centre.y);
 			} ctx.restore();

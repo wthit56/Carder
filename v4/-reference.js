@@ -1,7 +1,3 @@
-if (typeof fonts != "function") {
-	alert("fonts.js must be added before glyphs.js");
-}
-
 function fonts() {
 	return {
 		add: function(config) {

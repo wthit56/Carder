@@ -1,0 +1,185 @@
+<!doctype html><body>
+<script src="../fonts.js"></script>
+<script src="../glyphs.js"></script>
+<style>canvas {box-shadow:0 0 10px rgba(0,0,0,0.5);}</style>
+<canvas></canvas>
+<script>
+
+var g = glyphs.glyph("?",true,"48px Arial",{"x":13.1,"y":-2.3},18.5,"#26b423",30,1.41,1);
+// g.rotation = 0; // testing
+
+var canvas = document.querySelector("canvas"), ctx = canvas.getContext("2d");
+canvas.x = canvas.offsetLeft; canvas.y = canvas.offsetTop;
+
+var size = 500;
+var pan = { x: size / 2, y: size / 2 }, scale = size / 2 / g.radius * 0.8;
+
+var scale_rate = 1.1;
+{ // input
+	// zoom
+	canvas.onwheel = function(e) {
+		e.preventDefault();
+		
+		if (e.deltaY > 0) { scale *= scale_rate; }
+		else if (e.deltaY < 0) { scale /= scale_rate; }
+		
+		scale = Math.max(0.01, scale);
+		
+		render_ui.trigger();
+	};
+	
+	function from_centre(x, y) {
+		var xd = x - pan.x - canvas.x, yd = y - pan.y - canvas.y;
+		return Math.sqrt((xd * xd) + (yd * yd));
+	}
+	
+	// drag
+	var radius_catch = 10, show_radius = false, show_rotate = false;
+	var dragging = null, mouse_last = { x: 0, y: 0 }, DRAG_CENTRE = {}, DRAG_RADIUS = {}, DRAG_ROTATE = {};
+	canvas.onmousedown = function(e) {
+		e.preventDefault();
+		mouse_last.x = e.pageX; mouse_last.y = e.pageY;
+		
+		var fc = from_centre(e.pageX, e.pageY);
+		var fr = Math.abs(fc - (g.radius * scale));
+		if (fr <= radius_catch) {
+			show_radius = true;
+			dragging = DRAG_RADIUS;
+		}
+		else if (fc > g.radius * scale) {
+			show_rotate = true;
+			dragging = DRAG_ROTATE;
+		}
+		else {
+			dragging = DRAG_CENTRE;
+		}
+		
+		handle_mouse_position(e);
+	};
+	window.onmousemove = handle_mouse_position;
+	window.onmouseup = function(e) {
+		handle_mouse_position(e);
+		dragging = null;
+	};
+	function handle_mouse_position(e) {
+		if (dragging === DRAG_CENTRE) {
+			move_centre(e.pageX - mouse_last.x, e.pageY - mouse_last.y);
+			mouse_last.x = e.pageX; mouse_last.y = e.pageY;
+		}
+		else if (dragging === DRAG_RADIUS) {
+			g.radius = from_centre(e.pageX, e.pageY) / scale;
+		}
+		else if (dragging === DRAG_ROTATE) {
+			
+		}
+		else {
+			var fc = from_centre(e.pageX, e.pageY)
+			var fr = Math.abs(fc - (g.radius * scale));
+			show_radius = (fr <= radius_catch);
+			show_rotate = !show_radius && (fc > g.radius * scale);
+		}
+		
+		render_ui.trigger();
+	}
+	
+	var KEY_UP = 38, KEY_DOWN = 40, KEY_LEFT = 37, KEY_RIGHT = 39;
+	var KEY_W = 87, KEY_S = 83, KEY_A = 65, KEY_D = 68;
+	var KEY_Q = 81, KEY_E = 69;
+	window.onkeydown = function(e) {
+		var add_x = 0, add_y = 0, add_r = 0;
+		switch (e.keyCode) {
+			case KEY_UP: case KEY_W: add_y--; break;
+			case KEY_DOWN: case KEY_S: add_y++; break;
+			case KEY_LEFT: case KEY_A: add_x--; break;
+			case KEY_RIGHT: case KEY_D: add_x++; break;
+			case KEY_Q: add_r--; break;
+			case KEY_E: add_r++; break;
+			default: return;
+		}
+		
+		var amount;
+		if (e.ctrlKey) { amount = 10; }
+		else if (e.shiftKey) { amount = 5; }
+		else { amount = 1; }
+		
+		move_centre(add_x * amount, add_y * amount);
+		g.rotation += add_r * amount;
+		e.preventDefault();
+		render_ui.trigger();
+	};
+	function move_centre(_x, _y) {
+		var cx = 0, cy = 0;
+		var x = _x, y = _y;
+		
+		var radians = (Math.PI / 180) * (g.rotation),
+			cos = Math.cos(radians),
+			sin = Math.sin(radians),
+			nx = (cos * (x - cx)) + (sin * (y - cy)) + cx,
+			ny = (cos * (y - cy)) - (sin * (x - cx)) + cy;
+		
+		
+		g.centre.x -= nx / (scale * g.scale_x);
+		g.centre.y -= ny / (scale * g.scale_y);
+	}
+}
+
+var frame_id;
+function render_ui() {
+	canvas.width = canvas.height = size;
+	ctx.fillRect(0, 0, size, size);
+	
+	ctx.save(); {
+		ctx.translate(pan.x, pan.y);
+		
+		ctx.beginPath();
+		ctx.globalCompositeOperation = "destination-out";
+		ctx.arc(0,0,g.radius * scale, 0,Math.PI*2);
+		ctx.strokeStyle = "rgba(255,0,0,0.5)"; ctx.lineWidth = radius_catch;
+		ctx.fill();
+		if (show_radius) {
+			ctx.globalCompositeOperation = "source-over";
+			ctx.stroke();
+		}
+		
+		ctx.beginPath();
+		ctx.globalCompositeOperation = "source-over";
+		ctx.lineWidth = 1; ctx.strokeStyle = "#000";
+		ctx.moveTo(-g.radius * scale, 0); ctx.lineTo(g.radius * scale, 0);
+		ctx.moveTo(0, -g.radius * scale); ctx.lineTo(0, g.radius * scale);
+		ctx.stroke();
+		
+		ctx.globalCompositeOperation = "xor";
+		
+		console.log(show_rotate);
+		if (show_rotate) {
+			ctx.save(); {
+				ctx.setLineDash([20*scale,5*scale]);
+				ctx.beginPath();
+				ctx.rotate(-g.rotation);
+				ctx.arc(0, 0, g.radius * scale * 1.1, 0, Math.PI * 2);
+				ctx.stroke();
+			} ctx.restore();
+		}
+		
+		g.render(ctx, 0, 0, g.radius * scale);
+		
+	} ctx.restore();
+	
+	ctx.globalCompositeOperation = "xor";
+	ctx.textBaseline = "bottom"; ctx.font = "14px Arial";
+	var pad = 10;
+	ctx.fillText("zoom: " + scale.toFixed(2) + "x", pad, size - pad);
+	
+	
+	// render_ui.trigger();
+	
+	frame_id = 0;
+}
+render_ui.trigger = function() {
+	if (!frame_id) { frame_id = requestAnimationFrame(render_ui); }
+};
+render_ui();
+
+</script>
+
+<script src="http://localhost:35729/livereload.js"></script>
