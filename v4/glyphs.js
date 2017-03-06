@@ -26,7 +26,7 @@ glyphs.glyph = function glyph(char, as_text, font, centre, radius, colour, rotat
 		centre: centre, radius: radius, colour: colour,
 		rotation: rotation, scale_x: scale_x, scale_y: scale_y,
 				
-		render: function(ctx, x, y, radius, fill_override, rotate) {
+		render: function(ctx, x, y, radius, fill_override, rotate, renderer) {
 			rotate = (this.rotation || 0) + (rotate || 0);
 				
 			ctx.save(); {
@@ -45,7 +45,12 @@ glyphs.glyph = function glyph(char, as_text, font, centre, radius, colour, rotat
 				}
 				ctx.scale(sx, sy);
 				
-				ctx.fillText(this.char + (this.as_text ? "\uFE0E" : ""), -this.centre.x, -this.centre.y);
+				if (renderer) {
+					renderer.call(this, ctx, this.char + (this.as_text ? "\uFE0E" : ""), -this.centre.x, -this.centre.y);
+				}
+				else {
+					ctx.fillText(this.char + (this.as_text ? "\uFE0E" : ""), -this.centre.x, -this.centre.y);
+				}
 			} ctx.restore();
 		},
 		measure: function(ctx, scale) {

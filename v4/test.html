@@ -5,6 +5,7 @@
 <script src="images.js"></script>
 <script src="fonts.js"></script>
 <script src="colour.js"></script>
+<script src="glyphs.js"></script>
 <style>
 	canvas { box-shadow: 0 0 3px rgba(0,0,0,0.5); margin:3px; }
 </style>
@@ -16,18 +17,47 @@ var add_card_to_body = function() {
 }
 	
 var cards_rendered = then();
-var _fonts = fonts();
+var load_fonts = fonts();
+var load_glyphs = glyphs();
 
-var arial = _fonts.add({ face: "Arial", size: 48,
+var arial = load_fonts.add({ face: "Arial", size: 48,
 	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
-var times = _fonts.add({ face: "Times New Roman", size: 48,
+var times = load_fonts.add({ face: "Times New Roman", size: 48,
 	top: 0, hanging: 9, middle: 27, alphabetic: 43, ideographic: 53, bottom: 53 });
-var meddon = _fonts.add({ face: "Meddon", size: 48,
+var meddon = load_fonts.add({ face: "Meddon", size: 48,
 	top: 0, hanging: 14, middle: 51, alphabetic: 67, ideographic: 101, bottom: 101 });
+var griffy = load_fonts.add({ "face":"Griffy","size":48,"bold":false,"italic":false,"top":0,"hanging":10,"middle":33,"alphabetic":46,"ideographic":65,"bottom":65 });
+
+var glyphs = {
+	life: load_glyphs.add("♥",true,"48px Arial",{"x":14.3,"y":0.5},16.289720109627417,"#ff4747",0,1,1),
+	combat: load_glyphs.add("⚔",true,"48px Arial",{"x":18.25,"y":-0.7},21.874394758541317,"#6b6b6b",0,1,1),
+	item: load_glyphs.add("🗃",true,"48px Arial",{"x":23.827499999999993,"y":3.663499999999999},20.799352625141964,"#000000",0,1,1)
+};
 
 var cards = [];
 
 var card_size = { width: 250, height: 350, scale: 3 };
+
+function render_glyph(ctx, char, x, y) {
+	ctx.shadow("white", 60); ctx.strokeStyle = colour.setAlpha("white", 0.8); ctx.lineWidth = 0.5;
+	ctx.strokeText(char, x, y);
+	
+	ctx.shadow("white", 0);
+	ctx.fillText(char, x, y);
+}
+function render_stat(ctx, text, x, y, max_width) {
+	ctx.shadow("white", 60); ctx.strokeStyle = "white"; ctx.lineWidth = 1;
+	ctx.strokeText(text, x, y);
+	
+	ctx.shadow();
+	ctx.fillText(text, x, y);
+}
+function render_title(ctx, text, x, y, max_width) {
+	ctx.shadow("white", 60); ctx.strokeStyle = "white"; ctx.lineWidth = 2;
+	ctx.strokeText(text, x, y);
+	ctx.shadow();
+	ctx.fillText(text, x, y);
+}
 
 var resources = [
 	{ resource: "food" },
@@ -71,13 +101,13 @@ var resources = [
 cards.push.apply(cards, resources);
 
 var monsters = [
-	{ name: "Fire Wyrm", img: "fire-wyrm", health: 5, combat: 5, item: 3,
+	{ name: "Fire Wyrm", health: 1, combat: 5, loot: 3,
 		effect: "Only razes buildings.\n{water}: prevent the monster from razing 1 building." },
-	{ name: "Dragon", img: "dragon", health: 5, combat: 5, item: 3,
+	{ name: "Dragon", health: 5, combat: 2, loot: 1,
 		effect: "{stone} does not reduce combat." },
-	{ name: "Giant", img: "giant", health: 5, combat: 5, item: 3,
+	{ name: "Giant", health: 3, combat: 5, loot: 6,
 		effect: "Destroys a building instead of razing it." },
-	{ name: "Hydra", img: "hydra", health: 5, combat: 5, item: 3,
+	{ name: "Hydra", health: 5, combat: 4, loot: 3,
 		effect: "+1{health} every turn." }
 ].map(function(c) {
 	var canvas = make_canvas(card_size, "white"), ctx = canvas.context;
@@ -89,8 +119,20 @@ var monsters = [
 	var load_images = images();
 	var image = load_images.add("test-images/monsters/" + c.name.toLowerCase().replace(/ /g, "-") + ".png");
 	
-	load_images.then(function() {
-		image.render(canvas, { scale: "no stretch" })
+	then([load_glyphs, load_images]).then(function() {
+		image.render(canvas, { scale: "no stretch" });
+		
+		// meddon.render(ctx, c.name, 170, 185, null, "middle middle", 0.48, render_title);
+		meddon.render(ctx, c.name, 95, 187, null, "middle left", 0.48, render_title);
+		
+		glyphs.life.render(ctx, 30, 185, 20, null, null, render_glyph);
+		arial.render(ctx, c.health, 30, 185, null, "middle middle", 0.7, render_stat);
+		
+		glyphs.combat.render(ctx, 70, 185, 20, null, null, render_glyph);
+		arial.render(ctx, c.combat, 70, 185, null, "middle middle", 0.7, render_stat);
+		
+		glyphs.item.render(ctx, 205, 320, 25, null, null, render_glyph);
+		arial.render(ctx, c.loot, 225, 320, null, "middle middle", 0.9, render_stat);
 	});
 	
 	complete();

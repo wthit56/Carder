@@ -9,7 +9,12 @@ var colour = function(colour) {
 	return {
 		r: +p[0], g: +p[1], b: +p[2], alpha: p[3] == null ? 1 : +p[3],
 		toString: function() {
-			return "rgba(" + this.r + ", " + this.g + ", " + this.b + ", " + this.a + ")";
+			return "rgba(" + this.r + ", " + this.g + ", " + this.b + ", " + this.alpha + ")";
 		}
 	};
 }
+colour.setAlpha = function(col, alpha) {
+	var c = colour(col);
+	c.alpha *= alpha;
+	return c;
+};

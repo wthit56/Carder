@@ -19,8 +19,13 @@ var make_canvas = function(config, bg) {
 	var _drawImage = ctx.drawImage;
 	
 	ctx.shadow = function(colour, blur) {
-		ctx.shadowColor = colour;
-		ctx.shadowBlur = blur / canvas.scale;
+		if (!colour || !blur) {
+			ctx.shadowBlur = 0;
+		}
+		else {
+			ctx.shadowColor = colour;
+			ctx.shadowBlur = blur / canvas.scale;
+		}
 	};
 	
 	ctx.sub = function(render) {

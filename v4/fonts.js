@@ -111,8 +111,13 @@ var fonts = (function() {
 				ctx.scale(scale, scale);
 				
 				if (renderers) {
-					for (var i = 0, l = renderers.length; i < l; i++) {
-						renderers[i].call(this, ctx, text, 0, 0, max_width);
+					if (!Array.isArray(renderers)) {
+						renderers.call(this, ctx, text, 0, 0, max_width);
+					}
+					else {
+						for (var i = 0, l = renderers.length; i < l; i++) {
+							renderers[i].call(this, ctx, text, 0, 0, max_width);
+						}
 					}
 				}
 				else {
