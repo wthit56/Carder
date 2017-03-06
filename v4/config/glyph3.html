@@ -1,44 +1,70 @@
 <!doctype html><body>
+<script src="../then.js"></script>
 <script src="../fonts.js"></script>
 <script src="../glyphs.js"></script>
 <style>
-	canvas { box-shadow:0 0 10px rgba(0,0,0,0.5); }
+	canvas { box-shadow:0 0 10px rgba(0,0,0,0.5); float:left; }
 	canvas:focus { outline:#0ed3f1 solid 0.15em; }
-	form { display:inline-block; }
+	form { display:inline; padding:0.2em; }
 	form .field { display:block; padding:0.2em; }
 	form .field label:first-of-type { display:inline-block; min-width:5em; text-align:right; padding-right:0.2em; }
-	form .hidden-label { width:0; overflow:hidden; display:inline-block; visibility:hidden; }
+	form .hidden-label { width:0; overflow:hidden; display:inline-block; visibility:hidden; padding:0; }
 	form input[type=number] { width:5em; }
 	#char { width:3em; }
+	#as_text { margin-right:0; }
+	
+	#io { padding-left:5.2em; }
+		#io .field { display:inline-block; }
+		#io label  { display:block; text-align:left; }
+		#io textarea { resize:none; }
 </style>
-<canvas tabindex="0"></canvas>
+<canvas tabindex="0" width="500" height="500"></canvas>
 <form>
-	<span class="field"><label for="char">Character:</label><input id="char" /> (<label for="as_text" title="try to make coloured characters into single colour">as text?</label><input id="as_text" type="checkbox" />)</span>
+	<span class="field">
+		<label for="char">Character:</label><input id="char" />
+		(<label for="as_text" title="try to make coloured characters into single colour">as text?</label><input id="as_text" type="checkbox" />)
+	</span>
 	<span class="field"><label for="font">Font:</label><input id="font" title="full css font" /></span>
-	<span class="field"><label for="centre_x">Centre:</label>(<label for="centre_x" class="hidden-label">x:</label><input id="centre_x" type="number" title="left to right" data-set="centre.x" />px, <label for="centre_y" class="hidden-label">y:</label><input id="centre_y" data-set="centre.y" type="number" title="top to bottom" />px) NOTE: changing these values will not take into account the current rotation</span>
+	<span class="field"><label for="centre_x">Centre:</label><!--
+		-->(<label for="centre_x" class="hidden-label">x:</label><input id="centre_x" type="number" title="left to right" data-set="centre.x" />px,
+		<label for="centre_y" class="hidden-label">y:</label><input id="centre_y" data-set="centre.y" type="number" title="top to bottom" />px)
+		NOTE: changing these values will not take into account the current rotation
+	</span>
 	<span class="field"><label for="radius">Radius:</label><input id="radius" title="pixels from the centre" type="number" />px</span>
 	<span class="field"><label for="colour">Colour:</label><input id="colour" type="color" /></span>
 	<span class="field"><label for="rotation">Rotation:</label><input id="rotation" title="in degrees" type="number" />&deg;</span>
-	<span class="field"><label for="scale_x">Scale:</label>(<label for="scale_x" class="hidden-label">x:</label><input id="scale_x" type="number" title="left to right" value="100" />%, <label for="scale_y" class="hidden-label">y:</label><input id="scale_y" type="number" title="top to bottom" value="100" />%)
+	<span class="field"><label for="scale_x">Scale:</label><!--
+		-->(<label for="scale_x" class="hidden-label">x:</label><input id="scale_x" type="number" title="left to right" value="100" />%,
+		<label for="scale_y" class="hidden-label">y:</label><input id="scale_y" type="number" title="top to bottom" value="100" />%)
+	</span>
+	<div id="io">
+		<span class="field">
+			<label for="input">INPUT:</label>
+			<textarea id="input">"?",true,"48px Arial",{"x":13.1,"y":-2.3},18.5,"#26b423",30,1.41,1</textarea>
+		</span>
+		<span class="field">
+			<label for="output">OUTPUT:</label>
+			<textarea id="output"></textarea>
+		</span>
+	</div>
 </form>
 <script>
 
 var g = glyphs.glyph("?",true,"48px Arial",{"x":13.1,"y":-2.3},18.5,"#26b423",30,1.41,1);
-// g.rotation = 0; // testing
 
-scale_x.onchange = scale_x.oninput = function() {
-	g.scale_x = this.valueAsNumber;
-	render_ui.trigger();
+{ // setup
+	// g.rotation = 0; // testing
+
+	var canvas = document.querySelector("canvas"), ctx = canvas.getContext("2d");
+	canvas.x = canvas.offsetLeft; canvas.y = canvas.offsetTop;
+
+	var size = canvas.width;
+	var pan = { x: size / 2, y: size / 2 }, scale = size / 2 / g.radius * 0.8;
 }
 
-var canvas = document.querySelector("canvas"), ctx = canvas.getContext("2d");
-canvas.x = canvas.offsetLeft; canvas.y = canvas.offsetTop;
-
-var size = 500;
-var pan = { x: size / 2, y: size / 2 }, scale = size / 2 / g.radius * 0.8;
-
-var scale_rate = 1.1;
 { // input
+	var scale_rate = 1.1;
+	
 	// zoom
 	canvas.onwheel = function(e) {
 		e.preventDefault();
@@ -60,7 +86,7 @@ var scale_rate = 1.1;
 	}
 	
 	// drag
-	var radius_catch = 10, show_radius = false, show_rotate = false;
+	var radius_catch = 5, show_radius = false, show_rotate = false;
 	var dragging = null, mouse_last = { x: 0, y: 0, r: 0 }, DRAG_CENTRE = {}, DRAG_RADIUS = {}, DRAG_ROTATE = {};
 	canvas.onmousedown = function(e) {
 		e.preventDefault();
@@ -89,27 +115,45 @@ var scale_rate = 1.1;
 		dragging = null;
 	};
 	function handle_mouse_position(e) {
-		if (dragging === DRAG_CENTRE) {
-			move_centre(e.pageX - mouse_last.x, e.pageY - mouse_last.y);
-			mouse_last.x = e.pageX; mouse_last.y = e.pageY;
-		}
-		else if (dragging === DRAG_RADIUS) {
-			g.radius = from_centre(e.pageX, e.pageY) / scale;
-		}
-		else if (dragging === DRAG_ROTATE) {
-			var r = around_centre(e.pageX, e.pageY);
-			g.rotation += r - mouse_last.r;
-			mouse_last.r = r;
+		if (dragging) {
+			if (dragging === DRAG_CENTRE) {
+				move_centre(e.pageX - mouse_last.x, e.pageY - mouse_last.y);
+				mouse_last.x = e.pageX; mouse_last.y = e.pageY;
+			}
+			else if (dragging === DRAG_RADIUS) {
+				radius.value = g.radius = from_centre(e.pageX, e.pageY) / scale;
+			}
+			else if (dragging === DRAG_ROTATE) {
+				var r = around_centre(e.pageX, e.pageY);
+				rotation.value = g.rotation = g.rotation + r - mouse_last.r;
+				mouse_last.r = r;
+			}
+			
+			render_ui.trigger();
 		}
 		else {
-			var fc = from_centre(e.pageX, e.pageY)
+			var fc = from_centre(e.pageX, e.pageY);
 			var fr = Math.abs(fc - (g.radius * scale));
-			show_radius = (fr <= radius_catch);
-			show_rotate = !show_radius && (fc > g.radius * scale);
+			
+			var nshow_radius = is_over && (fr <= radius_catch);
+			var nshow_rotate = is_over && !show_radius && (fc > g.radius * scale);
+			
+			if ((nshow_radius !== show_radius) || (nshow_rotate !== show_rotate)) {
+				render_ui.trigger();
+			}
+			
+			show_radius = nshow_radius;
+			show_rotate = nshow_rotate;
 		}
-		
-		render_ui.trigger();
 	}
+	
+	var is_over = false;
+	canvas.onmouseover = function() {
+		is_over = true;
+	};
+	canvas.onmouseout = function() {
+		is_over = false;
+	};
 	
 	canvas.onclick = function() {
 		canvas.focus();
@@ -136,7 +180,7 @@ var scale_rate = 1.1;
 		else { amount = 1; }
 		
 		move_centre(add_x * amount, add_y * amount);
-		g.rotation += add_r * amount;
+		rotation.value = g.rotation = g.rotation + add_r * amount;
 		e.preventDefault();
 		render_ui.trigger();
 	};
@@ -151,89 +195,166 @@ var scale_rate = 1.1;
 			nx = (cos * (x - cx)) + (sin * (y - cy)) + cx,
 			ny = (cos * (y - cy)) - (sin * (x - cx)) + cy;
 		
-		g.centre.x -= nx / (scale * g.scale_x);
-		g.centre.y -= ny / (scale * g.scale_y);
+		centre_x.value = g.centre.x = g.centre.x - (nx / (scale * g.scale_x));
+		centre_y.value = g.centre.y = g.centre.y - (ny / (scale * g.scale_y));
 	}
 }
 
-var frame_id;
-function render_ui() {
-	canvas.width = canvas.height = size;
-	ctx.fillRect(0, 0, size, size);
-	
-	ctx.save(); {
-		ctx.translate(pan.x, pan.y);
+{ // rendering
+	var load_glyphs = glyphs();
+	var frame_id;
+	function render_ui() {
+		canvas.width = canvas.height = size;
+		ctx.fillRect(0, 0, size, size);
 		
-		ctx.beginPath();
-		ctx.globalCompositeOperation = "destination-out";
-		ctx.arc(0,0,g.radius * scale, 0,Math.PI*2);
-		ctx.strokeStyle = "rgba(255,0,0,0.5)"; ctx.lineWidth = radius_catch;
-		ctx.fill();
-		if (show_radius) {
+		ctx.save(); {
+			ctx.translate(pan.x, pan.y);
+			
+			ctx.beginPath();
+			ctx.globalCompositeOperation = "destination-out";
+			ctx.arc(0,0,g.radius * scale, 0,Math.PI*2);
+			ctx.strokeStyle = "rgba(255,0,0,0.5)"; ctx.lineWidth = radius_catch;
+			ctx.fill();
+			if (show_radius) {
+				ctx.globalCompositeOperation = "source-over";
+				ctx.stroke();
+			}
+			
+			ctx.beginPath();
 			ctx.globalCompositeOperation = "source-over";
+			ctx.lineWidth = 1; ctx.strokeStyle = "#000";
+			ctx.moveTo(-g.radius * scale, 0); ctx.lineTo(g.radius * scale, 0);
+			ctx.moveTo(0, -g.radius * scale); ctx.lineTo(0, g.radius * scale);
 			ctx.stroke();
-		}
-		
-		ctx.beginPath();
-		ctx.globalCompositeOperation = "source-over";
-		ctx.lineWidth = 1; ctx.strokeStyle = "#000";
-		ctx.moveTo(-g.radius * scale, 0); ctx.lineTo(g.radius * scale, 0);
-		ctx.moveTo(0, -g.radius * scale); ctx.lineTo(0, g.radius * scale);
-		ctx.stroke();
+			
+			ctx.globalCompositeOperation = "xor";
+			
+			if (show_rotate) {
+				ctx.save(); {
+					ctx.setLineDash([31*scale,1*scale]);
+					ctx.beginPath();
+					ctx.rotate(g.rotation / 80);
+					ctx.arc(0, 0, g.radius * scale * 1.1, 0, Math.PI * 2);
+					ctx.stroke();
+				} ctx.restore();
+			}
+			
+			g.render(ctx, 0, 0, g.radius * scale);
+			
+		} ctx.restore();
 		
 		ctx.globalCompositeOperation = "xor";
+		ctx.textBaseline = "bottom"; ctx.font = "14px Arial";
+		var pad = 10;
+		ctx.fillText("zoom: " + scale.toFixed(2) + "x", pad, size - pad);
 		
-		if (show_rotate) {
-			ctx.save(); {
-				ctx.setLineDash([31*scale,1*scale]);
-				ctx.beginPath();
-				ctx.rotate(g.rotation / 80);
-				ctx.arc(0, 0, g.radius * scale * 1.1, 0, Math.PI * 2);
-				ctx.stroke();
-			} ctx.restore();
-		}
+		// render_ui.trigger();
 		
-		g.render(ctx, 0, 0, g.radius * scale);
+		frame_id = 0;
+	}
+	render_ui.trigger = function() {
+		console.log("trigger render");
 		
-	} ctx.restore();
-	
-	ctx.globalCompositeOperation = "xor";
-	ctx.textBaseline = "bottom"; ctx.font = "14px Arial";
-	var pad = 10;
-	ctx.fillText("zoom: " + scale.toFixed(2) + "x", pad, size - pad);
-	
-	// render_ui.trigger();
-	
-	frame_id = 0;
-}
-render_ui.trigger = function() {
-	if (!frame_id) { frame_id = requestAnimationFrame(render_ui); }
-};
-
-Array.from(document.querySelectorAll(".field input")).forEach(function(i) {
-	
-	i.onchange = i.oninput = function() {
-		console.log(i);
-		var val = (
-			"valueAsNumber" in i ? i.valueAsNumber
-			: "checked" in i ? i.checked
-			: i.value
-		);
-
-		var setter = i.dataset.set;
-		if (setter) {
-			var e = "g." + setter + " = " + (typeof val === "string" ? '"' + val + '"' : val);
-			console.log(e);
-			eval(e);
-		}
-		else {
-			g[i.id] = val;
-		}
+		write_output();
 		
-		render_ui.trigger();
+		load_glyphs.then(function() {
+			if (!frame_id) { frame_id = requestAnimationFrame(render_ui); }
+		});
 	};
-});
+}
 
+function write_output() {
+	var o = JSON.stringify([
+		g.char,
+		g.as_text,
+		g.font,
+		{ x: g.centre.x, y: g.centre.y },
+		g.radius,
+		g.colour,
+		g.rotation,
+		g.scale_x,
+		g.scale_y
+	]);
+	o = o.substring(1, o.length - 1);
+	output.value = o;
+}
+
+{ // form
+	Array.from(document.querySelectorAll(".field input")).forEach(function(i) {
+		i.onchange = i.oninput = function() {
+			var val = (
+				i.type === "number" ? i.valueAsNumber
+				: i.type === "checkbox" ? i.checked
+				: i.value
+			);
+
+			var setter = i.dataset.set;
+			if (setter) {
+				var e = "g." + setter + " = " + (typeof val === "string" ? '"' + val + '"' : val);
+				eval(e);
+			}
+			else {
+				g[i.id] = val;
+			}
+			
+			render_ui.trigger();
+		};
+	});
+
+	(function() {
+		font.onchange = font.oninput = function() {
+			g.font = font.value;
+			load_glyphs.add(null,null,g.font);
+			render_ui.trigger();
+		};
+	})();
+	
+	scale_x.onchange = scale_x.oninput = function() {
+		g.scale_x = this.valueAsNumber / 100;
+		render_ui.trigger();
+	}
+	scale_y.onchange = scale_y.oninput = function() {
+		g.scale_y = this.valueAsNumber / 100;
+		render_ui.trigger();
+	}
+
+	input.onclick = output.onclick = function() {
+		this.select();
+	};
+	input.onpaste = function() {
+		setTimeout(handle_paste, 0);
+	};
+	function handle_paste() {
+		try {
+			var r = JSON.parse("["+input.value+"]");
+			g = load_glyphs.add.apply(load_glyphs, r);
+			
+			char.value = g.char;
+			as_text.checked = g.as_text;
+			font.value = g.font;
+			centre_x.value = g.centre.x;
+			centre_y.value = g.centre.y;
+			radius.value = g.radius;
+			colour.value = g.colour;
+			rotation.value = g.rotation;
+			scale_x.value = g.scale_x * 100;
+			scale_y.value = g.scale_y * 100;
+			
+			input.value = "UPDATED";
+			
+			write_output();
+			
+			render_ui.trigger();
+		}
+		catch (e) {
+			throw e;
+			prompt("Please copy this into an email and send to the developer:", "INPUT PASTE ERROR:\n" + e.message + "\n" + e.stack);
+			input.value = "ERROR";
+		}
+	}
+}
+
+handle_paste();
 render_ui();
 
 </script>

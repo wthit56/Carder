@@ -171,7 +171,7 @@ glyphs.glyph = function(char, as_text, font, centre, radius, colour, rotation, s
 	}
 
 	return {
-		char, font, centre, radius, colour, rotation, scale_x, scale_y,
+		char, as_text, font, centre, radius, colour, rotation, scale_x, scale_y,
 		
 		render: function(ctx, x, y, radius, fill_override, rotate) {
 			x == number; y == number; // centre to render the glyph from

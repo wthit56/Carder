@@ -1,7 +1,8 @@
 var then = function(prerequisites) {
 	var complete = 0, total = 0, after = function() { };
 	var oncomplete = function() {
-		if (after && (++complete >= total)) {
+		if ((++complete >= total) && after) {
+			console.log("after triggered");
 			setTimeout(after, 0);
 		}
 	};
