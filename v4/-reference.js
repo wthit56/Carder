@@ -193,3 +193,24 @@ glyphs.glyph = function(char, as_text, font, centre, radius, colour, rotation, s
 		}
 	};
 }
+
+
+cardsheet = function(config, cards) {
+	config == {
+		card_size: { width: number, height: number },
+		hidden: canvas_render || image,
+		
+		// optional
+		max_size: number // max square size in pixels
+		grid: { cols: number, rows: number }, // set how many cards wide and high
+	};
+	
+	cards == [canvas_render || image ...];
+	
+	return {
+		cards: [{ cardsheet: canvas_render, index: card_number_in_cardsheet }, ...],
+		cardsheets: [{
+			cardsheet: canvas_render, cols: number, rows: number
+		}, ...]
+	};
+};

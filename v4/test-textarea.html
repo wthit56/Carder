@@ -1,0 +1,32 @@
+<!doctype html><body><script src="textarea.js"></script><script>
+
+function test(config, content) {
+	var canvas = document.createElement("CANVAS"), ctx = canvas.getContext("2d");
+	var dom = document.createElement("DIV"); dom.className = "dom-demo";
+	
+	canvas.width = config.to.x; canvas.height = config.to.y;
+	dom.style.width = canvas.width + "px"; dom.style.height = canvas.height + "px";
+	
+	var t = textarea(config);
+	console.log(t.to_words(content));
+	dom.innerText = content.map(function(p) {
+		if (typeof p === "string") { return p; }
+		else { return p.text; }
+	}).join("");
+	
+	document.body.appendChild(canvas); document.body.appendChild(dom);
+}
+
+test({ from: { x: 0, y: 0 }, to: { x: 100, y: 100 } }, ["\t", "word1", "part2", " word2", " word3 word4", { text: "part2" }]);
+
+</script>
+<style>
+
+body {margin-left:500px;}
+
+canvas, div { display:block; margin:5px; float:left; }
+canvas {  box-shadow:0 0 5px rgba(0,0,0,0.5); }
+div { outline:3px solid rgba(0,0,0,0.1); }
+
+</style>
+<script src="http://localhost:35729/livereload.js"></script>
