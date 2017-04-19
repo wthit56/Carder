@@ -14,6 +14,10 @@
 	.cardsheet { text-align:center; display:inline-block; padding:0.5em; }
 	.cardsheet:hover { background:#eee; }
 		.cardsheet input { }
+	#generate { display:inline-block; }
+	.json { display:inline-block; }
+		.json textarea { width:100%; height:10em; }
+	.field.folder { padding: 0.2em 0; }
 </style>
 <body>
 <script>
@@ -41,9 +45,16 @@ var glyphDB = {
 	wood: load_glyphs.add("█",true,"48px Arial",{"x":17,"y":1.5},34.72202344778929,"#ac7333",48.12201981426726,0.58,1)
 };
 
-var cards = [];
-
 var card_size = { width: 250, height: 350, scale: 3 };
+
+var image_preload = images();
+image_preload.then(cards_rendered.add());
+
+var hidden = image_preload.add("test-images/hidden.png"); hidden.id = "hidden-card";
+var back = image_preload.add("test-images/back.png"); {
+	back.id = "back-card";
+	back.preview_width = card_size.width;
+}
 
 function render_glyph(ctx, char, x, y) {
 	ctx.shadow("white", 60); ctx.strokeStyle = colour.setAlpha("white", 0.8); ctx.lineWidth = 0.5;
@@ -66,6 +77,36 @@ function render_title(ctx, text, x, y, max_width) {
 	ctx.fillText(text, x, y);
 }
 
+function add_multiple(arr, count, item) {
+	for (var i = 0; i < count; i++) {
+		arr.push(item);
+	}
+}
+
+var decks = [];
+decks.name = "Foragerv2";
+decks.add = function(name, description, config) {
+	var cards = [];
+	
+	var d = {
+		name: name, description: description,
+		cards: cards, config: config || {},
+		add: function(count, card) {
+			add_multiple(cards, count, card);
+		},
+		shuffle: function() {
+			var i = 0, l = this.cards.length;
+			while (i < l) {
+				this.cards.unshift(this.cards.splice(i + (Math.random() * (l - i)), 1)[0]);
+				i++;
+			}
+		}
+	};
+	decks.push(d);
+	return d;
+};
+
+var foraging_deck = decks.add("Foraging", null, { facedown: true });
 var resources = [
 	{ resource: "food" },
 	{ resource: "water" },
@@ -85,9 +126,6 @@ var resources = [
 	var centre = { x: "middle", y: "middle" };
 	var rcap = c.resource[0].toUpperCase() + c.resource.substr(1);
 	
-	var hidden = _images.add("test-images/hidden.png");
-	hidden.id = "hidden-card";
-	
 	then([_images, fonts]).then(function() {
 		canvas.context.sub(function() {
 			var shadow_colour = colour("black");
@@ -105,16 +143,47 @@ var resources = [
 		complete();
 	});
 	
-	return { name: rcap + " - Resource", description: "Used to build buildings, activate items, and distract monsters",
-		render: canvas, size: card_size, hidden: hidden };
+	var proxy = { name: rcap + " - Resource", description: "Used to build buildings, activate items, and distract monsters",
+		render: canvas, size: card_size, hidden: hidden, back: back };
+	decks.add(proxy.name, proxy.description).add(10, proxy);
+	foraging_deck.add(1, proxy);
+	return proxy;
 });
-cards.push.apply(cards, resources);
+// cards.push.apply(cards, resources);
 
 var effect_parsers = [
 	{ type: "glyph", find: /\{([^}]+)}/, from: "$1", colour: "black" },
 	{ type: "break", find: /\n/ },
 	{ type: "text", font: arial, bold: true, scale: 0.4, find: /\*([^\r\n\*]+)\*/, from: "$1" }
 ];
+
+var time_intro_deck = decks.add("Time: Intro Cards", "Use 3 per player.", { facedown: true }),
+	time_deck = decks.add("Time: With Monsters!", "Shuffle.", { facedown: true }),
+	time_boss_deck = decks.add("Time: Bosses", "Shuffle, add 1 to Time deck.", { facedown: true });
+
+var time = (function() {
+	var canvas = make_canvas(card_size, "white"), ctx = canvas.context;
+	embiggenner(canvas, card_size);
+	document.body.appendChild(canvas);
+	
+	var complete = cards_rendered.add();
+	var load_images = images();
+	
+	var time = load_images.add("test-images/time.jpg");
+	load_images.then(function() {
+		time.render(canvas, {
+			position: canvas.centre,
+			align: { x: "middle", y: "middle" },
+			scale: 0.25
+		});
+		complete();
+	});
+	
+	var proxy = { name: "Time passes...", render: canvas, size: card_size, hidden: hidden, back: back };
+	time_intro_deck.add(8, proxy);
+	time_deck.add(30, proxy);
+	return proxy;
+})();
 
 var monsters = [
 	{ name: "Fire Wyrm", health: 1, combat: 5, loot: 3,
@@ -126,8 +195,13 @@ var monsters = [
 	{ name: "Hydra", health: 5, combat: 4, loot: 3,
 		effect: "+1{life} every turn." },
 	{ name: "Fire Wyrm", health: 3, combat: 5, loot: 6,
-		effect: "[TEST!!!] Destroys {life} a building {combat} instead of {item} razing it." },
+		effect: "[TEST!!!] Destroys {life} a building {combat} instead of {item} razing it." }
 ].map(function(c) {
+	var proxy = monster_render(c);
+	time_deck.add(1, proxy);
+});
+time_boss_deck.add(3, monster_render({ name: "Thendar", health: 8, combat: 3, effect: "???" }));
+function monster_render(c) {
 	var canvas = make_canvas(card_size, "white"), ctx = canvas.context;
 	embiggenner(canvas, card_size);
 	document.body.appendChild(canvas);
@@ -136,9 +210,6 @@ var monsters = [
 	
 	var load_images = images();
 	var image = load_images.add("test-images/monsters/" + c.name.toLowerCase().replace(/ /g, "-") + ".png");
-	
-	var hidden = load_images.add("test-images/hidden.png");
-	hidden.id = "hidden-card";
 	
 	then([load_glyphs, load_images]).then(function() {
 		image.render(canvas, { scale: "no stretch" });
@@ -151,8 +222,10 @@ var monsters = [
 		glyphDB.combat.render(ctx, 180, 185, 20, null, null, render_glyph);
 		arial.render(ctx, c.combat, 180, 185, null, "middle middle", 0.7, render_stat);
 		
-		glyphDB.item.render(ctx, 205, 320, 25, null, null, render_glyph);
-		arial.render(ctx, c.loot, 225, 320, null, "middle middle", 0.9, render_stat);
+		if (c.loot) {
+			glyphDB.item.render(ctx, 205, 320, 25, null, null, render_glyph);
+			arial.render(ctx, c.loot, 225, 320, null, "middle middle", 0.9, render_stat);
+		}
 		
 		var effect_box = { from: { x: 20, y: 210 }, to: { x: card_size.width - 20, y: card_size.height - 20 } };
 		if (false) { // debug
@@ -171,35 +244,157 @@ var monsters = [
 	});
 	
 	return { name: c.name + " - Monster [" + c.health + " health, " + c.combat + " combat, " + c.loot + " loot]", description: c.effect,
-		render: canvas, size: card_size, hidden: hidden };
-});
-cards.push.apply(cards, monsters);
+		render: canvas, size: card_size, hidden: hidden, back: back };
+}
+
+time_deck.shuffle();
+time_boss_deck.shuffle();
 
 cards_rendered.then(function() {
-	var rendered = cs_from_cards({ max_size: 4096 }, cards);
-	var sheet_index = 0;
-	rendered.forEach(function(r) {
-		r.cardsheets.forEach(function(cs) {
-			cs.filename = "_Forager_" + ++sheet_index + ".png";
-			
-			cs.cardsheet.data = cs;
-			embiggenner(cs.cardsheet, { width: Math.max(cs.cards[0].size.width, cs.cards[0].size.height) });
-			
-			var part = document.createElement("SPAN");
-			part.className = "cardsheet";
-			part.appendChild(cs.cardsheet);
-			
-			part.appendChild(document.createElement("BR"));
-			
-			var filename = document.createElement("INPUT");
-			filename.value = cs.filename;
-			filename.onchange = function() { cs.filename = this.value; };
-			part.appendChild(filename);
-			
-			document.body.appendChild(part);
+	var TTSgen = document.body.appendChild(document.createElement("FIELDSET"));
+	TTSgen.id = "generate";
+	TTSgen.innerHTML = "<legend>Tabletop Simulator Object JSON</legend><p>Save each image locally, or upload to a server. Paste the generated code into a Saved Object json file, and save it. Now add it to your game in TTS.</p>";
+	
+	var cards = [], backs = 0;
+	decks.forEach(function(d) { // get all unique cards from decks
+		d.cards.forEach(function(c) {
+			if (!c.added_to_cardsheets) {
+				cards.push(c);
+				c.added_to_cardsheets = true;
+			}
+			if (c.back && !c.back.added_to_save) {
+				backs++;
+				add_to_save("_" + decks.name + "_back_" + backs + ".png", c.back, c.back);
+				c.back.added_to_save = true;
+			}
 		});
 	});
+
+	var rendered = cs_from_cards(null, cards);
+	var sheet_index = 0;
+	rendered.forEach(function(r) { // render cardsheets, link cards
+		r.cardsheets.forEach(function(cs) {
+			sheet_index++;
+			cs.index = sheet_index;
+			add_to_save("_" + decks.name + "_faces_" + sheet_index + ".png", cs, cs.cardsheet);
+		});
+	});
+	
+	function add_to_save(init_filename, data, render) {
+		data.filename = init_filename;
+		
+		render.data = data;
+		if (data.cardsheet) {
+			embiggenner(render, { width: Math.max(data.cards[0].size.width, data.cards[0].size.height) });
+		}
+		else {
+			embiggenner(render, { width: data.preview_width });
+		}
+		
+		var part = document.createElement("SPAN");
+		part.className = "cardsheet";
+		part.appendChild(render);
+		
+		part.appendChild(document.createElement("BR"));
+		
+		var filename = document.createElement("INPUT");
+		filename.value = init_filename;
+		filename.onchange = function() { data.filename = this.value; };
+		filename.onclick = function() { this.select(); };
+		part.appendChild(filename);
+		
+		TTSgen.appendChild(part);
+	}
+	
+	{ // json generator
+		var TTSjson = TTSgen.appendChild(document.createElement("DIV"));
+		TTSjson.className = "json";
+		
+		var folder_field = TTSjson.appendChild(document.createElement("DIV"));
+		folder_field.className = "field folder";
+		var folder_label = folder_field.appendChild(document.createElement("LABEL"));
+		folder_label.innerText = "Folder: ";
+		var folder = folder_field.appendChild(document.createElement("INPUT"));
+		folder_label.for = folder.id = "folder";
+		
+		var output = TTSjson.appendChild(document.createElement("TEXTAREA"));
+		output.onclick = function() { this.select(); };
+		var regen = TTSjson.appendChild(document.createElement("INPUT"));
+		regen.type = "button";
+		regen.value = "Regenerate";
+		regen.onclick = function(e) {
+			e.preventDefault();
+			generate();
+		};
+		
+		function generate() {
+			var json = { ObjectStates: [] };
+			
+			var step = 3;
+			var x = Math.floor(decks.length * step / -2);
+			decks.forEach(function(deck) {
+				console.log(x);
+				var d = {
+					Name: "DeckCustom",
+					Nickname: deck.name,
+					Description: deck.description || "",
+					
+					Transform: {
+						posX: x, posY: 0, posZ: 0,
+						rotX: 0, rotY: 180, rotZ: deck.config.facedown ? 180 : 0,
+						scaleX: 1, scaleY: 1, scaleZ: 1
+					},
+					
+					Grid: false,
+					Locked: false,
+					SidewaysCard: false,
+					DeckIDs: [], ContainedObjects: [],
+					CustomDeck: {}
+				};
+				
+				if (x === 0) {
+					json.ObjectStates.unshift(d);
+				}
+				else {
+					json.ObjectStates.push(d);
+				}
+				
+				x += step;
+				
+				var f = folder.value;
+				if (f && /[^\\/]$/.test(folder.value)) { f += "/"; }
+				
+				deck.cards.forEach(function(c) {
+					if (!(c.cardsheet.index in d.CustomDeck)) {
+						d.CustomDeck[c.cardsheet.index] = {
+							FaceURL: f + c.cardsheet.filename,
+							BackURL: c.back ? f + c.back.filename : "http://www.imagemagick.org/Usage/fourier/generated_phase.png", // todo
+							NumWidth: c.cardsheet.cols,
+							NumHeight: c.cardsheet.rows,
+							BackIsHidden: false,
+							UniqueBack: false
+						};
+					}
+					
+					var cid = (c.cardsheet.index * 100) + c.cardsheet_index;
+					d.DeckIDs.push(cid);
+					d.ContainedObjects.push({
+						Name: "Card", CardID: cid,
+						Nickname: c.name, Description: c.description,
+						Grid: false, Locked: false, Sticky: false,
+						Transform: { scaleX: 1, scaleY: 1, scaleZ: 1 }
+					});
+				});
+			});
+			
+			output.value = JSON.stringify(json, null, 4);
+		}	
+		generate();
+		
+		document.body.appendChild(TTSgen);
+	}
 });
+
 	
 function embiggenner(canvas, size) {
 	canvas.style.width = size.width + "px";

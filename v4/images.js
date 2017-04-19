@@ -48,6 +48,7 @@ var images = (function() {
 				case "bottom": { ay = -1; } break;
 			}
 		}
+		// console.log(image.src, ax, ay);
 		
 		// adjust centre for alignment
 		t.translate.x += mx * ax * t.scale.x;

@@ -1,9 +1,11 @@
 function cs_from_cards(config, cards) {
 	var sheets = [];
+	config = config || {};
 	cards.forEach(function(c) { // sort cards into cardsheets
-		var sid = "" + (c.hidden
-			? (c.hidden.id || c.hidden)
-			: c.size.width + "-" + c.size.height
+		var sid = "" + (
+			c.hidden
+				? (c.hidden.id || c.hidden)
+				: c.size.width + "-" + c.size.height
 		);
 		
 		var deck = sheets[sid];
@@ -15,8 +17,6 @@ function cs_from_cards(config, cards) {
 			deck.grid = config.grid;
 		}
 		deck.push(c);
-		
-		c.render.title = c.name + "\n-----\n" + c.description;
 	});
 	
 	var cardsheets = [];
