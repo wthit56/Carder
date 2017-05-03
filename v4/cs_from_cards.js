@@ -27,8 +27,8 @@ function cs_from_cards(config, cards) {
 		}));
 		
 		rendered.cards.forEach(function(v, i) {
-			cards[i].cardsheet = v.cardsheet;
-			cards[i].cardsheet_index = v.index;
+			d[i].cardsheet = v.cardsheet;
+			d[i].cardsheet_index = v.index;
 		});
 		
 		rendered.cardsheets.forEach(function(cs) {

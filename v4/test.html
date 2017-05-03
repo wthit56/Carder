@@ -9,6 +9,9 @@
 <script src="cardsheet.js"></script>
 <script src="cs_from_cards.js"></script>
 <script src="textbox-v3.1.js"></script>
+<script src="game_decks.js"></script>
+<script src="embiggenner.js"></script>
+<script src="generate_tts.js"></script>
 <style>
 	canvas { box-shadow: 0 0 3px rgba(0,0,0,0.5); margin:3px; }
 	.cardsheet { text-align:center; display:inline-block; padding:0.5em; }
@@ -77,34 +80,7 @@ function render_title(ctx, text, x, y, max_width) {
 	ctx.fillText(text, x, y);
 }
 
-function add_multiple(arr, count, item) {
-	for (var i = 0; i < count; i++) {
-		arr.push(item);
-	}
-}
-
-var decks = [];
-decks.name = "Foragerv2";
-decks.add = function(name, description, config) {
-	var cards = [];
-	
-	var d = {
-		name: name, description: description,
-		cards: cards, config: config || {},
-		add: function(count, card) {
-			add_multiple(cards, count, card);
-		},
-		shuffle: function() {
-			var i = 0, l = this.cards.length;
-			while (i < l) {
-				this.cards.unshift(this.cards.splice(i + (Math.random() * (l - i)), 1)[0]);
-				i++;
-			}
-		}
-	};
-	decks.push(d);
-	return d;
-};
+var decks = game_decks("Foragerv2");
 
 var foraging_deck = decks.add("Foraging", null, { facedown: true });
 var resources = [
@@ -157,9 +133,9 @@ var effect_parsers = [
 	{ type: "text", font: arial, bold: true, scale: 0.4, find: /\*([^\r\n\*]+)\*/, from: "$1" }
 ];
 
-var time_intro_deck = decks.add("Time: Intro Cards", "Use 3 per player.", { facedown: true }),
-	time_deck = decks.add("Time: With Monsters!", "Shuffle.", { facedown: true }),
-	time_boss_deck = decks.add("Time: Bosses", "Shuffle, add 1 to Time deck.", { facedown: true });
+var time_boss_deck = decks.add("Time: Bosses", "Shuffle, draw 1 to start the Time deck", { facedown: true, shuffled: true }),
+	time_deck = decks.add("Time: With Monsters!", "Shuffle, add on top of the Time deck", { facedown: true, shuffled: true }),
+	time_intro_deck = decks.add("Time: Intro Cards", "Add 3 per player on top of the time deck", { facedown: true });
 
 var time = (function() {
 	var canvas = make_canvas(card_size, "white"), ctx = canvas.context;
@@ -243,181 +219,75 @@ function monster_render(c) {
 		complete();
 	});
 	
-	return { name: c.name + " - Monster [" + c.health + " health, " + c.combat + " combat, " + c.loot + " loot]", description: c.effect,
+	return { name: c.name + " - Monster [" + c.health + " health, " + c.combat + " combat" + (c.loot ? ", " + c.loot + " loot" : "") + "]", description: c.effect,
 		render: canvas, size: card_size, hidden: hidden, back: back };
 }
 
-time_deck.shuffle();
-time_boss_deck.shuffle();
-
-cards_rendered.then(function() {
-	var TTSgen = document.body.appendChild(document.createElement("FIELDSET"));
-	TTSgen.id = "generate";
-	TTSgen.innerHTML = "<legend>Tabletop Simulator Object JSON</legend><p>Save each image locally, or upload to a server. Paste the generated code into a Saved Object json file, and save it. Now add it to your game in TTS.</p>";
+var tile_size = { width: 250, height: 250, scale: 3 };
+var locations_back = (function() {
+	var complete = cards_rendered.add();
 	
-	var cards = [], backs = 0;
-	decks.forEach(function(d) { // get all unique cards from decks
-		d.cards.forEach(function(c) {
-			if (!c.added_to_cardsheets) {
-				cards.push(c);
-				c.added_to_cardsheets = true;
-			}
-			if (c.back && !c.back.added_to_save) {
-				backs++;
-				add_to_save("_" + decks.name + "_back_" + backs + ".png", c.back, c.back);
-				c.back.added_to_save = true;
-			}
-		});
-	});
-
-	var rendered = cs_from_cards(null, cards);
-	var sheet_index = 0;
-	rendered.forEach(function(r) { // render cardsheets, link cards
-		r.cardsheets.forEach(function(cs) {
-			sheet_index++;
-			cs.index = sheet_index;
-			add_to_save("_" + decks.name + "_faces_" + sheet_index + ".png", cs, cs.cardsheet);
-		});
+	var canvas = make_canvas(tile_size), ctx = canvas.context;
+	embiggenner(canvas, tile_size);
+	canvas.preview_width = tile_size.width;
+	document.body.appendChild(canvas);
+	
+	ctx.fillStyle = "#204120";
+	ctx.fillRect(0, 0, tile_size.width, tile_size.height);
+	
+	var load_images = images();
+	var forest = load_images.add("test-images/tile-over.png");
+	load_images.then(function() {
+		forest.render(canvas, { scale: "no stretch" });
+		// forest.render(canvas);
+		complete();
 	});
 	
-	function add_to_save(init_filename, data, render) {
-		data.filename = init_filename;
-		
-		render.data = data;
-		if (data.cardsheet) {
-			embiggenner(render, { width: Math.max(data.cards[0].size.width, data.cards[0].size.height) });
-		}
-		else {
-			embiggenner(render, { width: data.preview_width });
-		}
-		
-		var part = document.createElement("SPAN");
-		part.className = "cardsheet";
-		part.appendChild(render);
-		
-		part.appendChild(document.createElement("BR"));
-		
-		var filename = document.createElement("INPUT");
-		filename.value = init_filename;
-		filename.onchange = function() { data.filename = this.value; };
-		filename.onclick = function() { this.select(); };
-		part.appendChild(filename);
-		
-		TTSgen.appendChild(part);
-	}
-	
-	{ // json generator
-		var TTSjson = TTSgen.appendChild(document.createElement("DIV"));
-		TTSjson.className = "json";
-		
-		var folder_field = TTSjson.appendChild(document.createElement("DIV"));
-		folder_field.className = "field folder";
-		var folder_label = folder_field.appendChild(document.createElement("LABEL"));
-		folder_label.innerText = "Folder: ";
-		var folder = folder_field.appendChild(document.createElement("INPUT"));
-		folder_label.for = folder.id = "folder";
-		
-		var output = TTSjson.appendChild(document.createElement("TEXTAREA"));
-		output.onclick = function() { this.select(); };
-		var regen = TTSjson.appendChild(document.createElement("INPUT"));
-		regen.type = "button";
-		regen.value = "Regenerate";
-		regen.onclick = function(e) {
-			e.preventDefault();
-			generate();
-		};
-		
-		function generate() {
-			var json = { ObjectStates: [] };
-			
-			var step = 3;
-			var x = Math.floor(decks.length * step / -2);
-			decks.forEach(function(deck) {
-				console.log(x);
-				var d = {
-					Name: "DeckCustom",
-					Nickname: deck.name,
-					Description: deck.description || "",
-					
-					Transform: {
-						posX: x, posY: 0, posZ: 0,
-						rotX: 0, rotY: 180, rotZ: deck.config.facedown ? 180 : 0,
-						scaleX: 1, scaleY: 1, scaleZ: 1
-					},
-					
-					Grid: false,
-					Locked: false,
-					SidewaysCard: false,
-					DeckIDs: [], ContainedObjects: [],
-					CustomDeck: {}
-				};
-				
-				if (x === 0) {
-					json.ObjectStates.unshift(d);
-				}
-				else {
-					json.ObjectStates.push(d);
-				}
-				
-				x += step;
-				
-				var f = folder.value;
-				if (f && /[^\\/]$/.test(folder.value)) { f += "/"; }
-				
-				deck.cards.forEach(function(c) {
-					if (!(c.cardsheet.index in d.CustomDeck)) {
-						d.CustomDeck[c.cardsheet.index] = {
-							FaceURL: f + c.cardsheet.filename,
-							BackURL: c.back ? f + c.back.filename : "http://www.imagemagick.org/Usage/fourier/generated_phase.png", // todo
-							NumWidth: c.cardsheet.cols,
-							NumHeight: c.cardsheet.rows,
-							BackIsHidden: false,
-							UniqueBack: false
-						};
-					}
-					
-					var cid = (c.cardsheet.index * 100) + c.cardsheet_index;
-					d.DeckIDs.push(cid);
-					d.ContainedObjects.push({
-						Name: "Card", CardID: cid,
-						Nickname: c.name, Description: c.description,
-						Grid: false, Locked: false, Sticky: false,
-						Transform: { scaleX: 1, scaleY: 1, scaleZ: 1 }
-					});
-				});
-			});
-			
-			output.value = JSON.stringify(json, null, 4);
-		}	
-		generate();
-		
-		document.body.appendChild(TTSgen);
-	}
+	return canvas;
+})();
+
+var locations_deck = decks.add("Locations", null, { facedown: true, shuffled: true });
+["Food", "Water", "Wood", "Stone"].forEach(function(c) {
+	locations_deck.add(2, {
+		name: c + " - Location", description: "Forage for more " + c,
+		render: render_tile(c), size: tile_size, back: locations_back
+	});
 });
 
+(function() {
+	var render = render_tile("Town");
+	decks.add("Town", "Place in the centre of the table").add(1, {
+		name: "Town - Location", description: "The place to lay your head.\nThe place to defend with your life.",
+		render: render, size: tile_size, back: render
+	});
+})();
+
+function render_tile(c) {
+	var canvas = make_canvas(tile_size), ctx = canvas.context;
+	embiggenner(canvas, tile_size);
+	document.body.appendChild(canvas);
 	
-function embiggenner(canvas, size) {
-	canvas.style.width = size.width + "px";
-	canvas.onclick = function() {
-		canvas.embiggen = !canvas.embiggen;
+	var complete = cards_rendered.add();
+	var load_images = images();
+	var icon = load_images.add("test-images/icons/" + c.toLowerCase() + ".png");
+	var forest = load_images.add("test-images/tile-over.png");
+	
+	load_images.then(function() {
+		ctx.fillStyle = "#a0d6a0";
+		ctx.fillRect(0, 0, tile_size.width, tile_size.height);
 		
-		if (canvas.embiggen) {
-			canvas.style.left = canvas.offsetLeft + "px";
-			canvas.style.top = canvas.offsetTop + "px";
-			canvas.style.position = "absolute";
-			canvas.style.width = "";
-			canvas.style.borderRadius = "30px";
-		}
-		else {
-			canvas.style.position = "";
-			canvas.style.width = size.width + "px";
-			canvas.style.borderRadius = "";
-		}
-	};
-	
-	canvas.style.width = size.width + "px";
+		icon.render(canvas, { position: canvas.centre, align: { x: "middle", y: "middle" }, scale: 0.22 });
+		forest.render(canvas, { scale: "no stretch" });
+		
+		complete();
+	});
+
+	return canvas;
 }
 
+cards_rendered.then(function() {
+	generate_tts(decks);
+});
 
 </script>
 <script src="http://localhost:35729/livereload.js"></script>

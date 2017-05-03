@@ -1,3 +1,5 @@
+console.log("then loaded");
+
 var then = function(prerequisites) {
 	var complete = 0, total = 0, after = function() { };
 	var oncomplete = function() {

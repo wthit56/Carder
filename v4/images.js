@@ -15,6 +15,8 @@ var images = (function() {
 	};
 
 	images.render = function(canvas, image, config) {
+		config = config || {};
+		
 		// built-in tints
 		if (config.darken) {
 			image = overlay(image, "darken", 1, config.darken);
